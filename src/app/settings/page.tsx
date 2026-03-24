@@ -381,7 +381,7 @@ export default function SettingsPage() {
           </div>
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4" />
-            <span>All times shown in your local timezone</span>
+            <span>Timezone: {Intl.DateTimeFormat().resolvedOptions().timeZone}</span>
           </div>
           <div className="flex items-center gap-2">
             <MapPin className="w-4 h-4" />

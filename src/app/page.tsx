@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { ArrowRight, ChevronLeft, ChevronRight, Moon, Sunrise, Sunset } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Moon, Share2, Sunrise, Sunset } from "lucide-react";
 
 function useNow() {
   const [now, setNow] = useState(() => new Date());
@@ -26,10 +26,42 @@ function useNow() {
 export default function HomePage() {
   const { location, preferences, requestLocation, dayOffset, setDayOffset } = useApp();
   const now = useNow();
+  const [shareFeedback, setShareFeedback] = useState(false);
 
   useEffect(() => {
     if (!location) requestLocation();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Read ?date=YYYY-MM-DD from URL on mount and apply as dayOffset
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const dateParam = params.get("date");
+    if (dateParam) {
+      const [y, m, d] = dateParam.split("-").map(Number);
+      const target = new Date(y, m - 1, d);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      target.setHours(0, 0, 0, 0);
+      const diff = Math.round((target.getTime() - today.getTime()) / 86400000);
+      setDayOffset(diff);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleShare = async () => {
+    const d = new Date();
+    d.setDate(d.getDate() + dayOffset);
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const url = `${window.location.origin}/?date=${dateStr}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Moon Tracker", text: `Moon on ${dateStr}`, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        setShareFeedback(true);
+        setTimeout(() => setShareFeedback(false), 2000);
+      }
+    } catch {}
+  };
 
   if (!location) return <NoLocation />;
 
@@ -81,6 +113,17 @@ export default function HomePage() {
         </div>
         <Button variant="ghost" size="icon" onClick={() => setDayOffset(dayOffset + 1)} className="shrink-0 w-9 h-9">
           <ChevronRight className="w-5 h-5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleShare}
+          title="Share this date"
+          className="shrink-0 w-9 h-9 relative"
+        >
+          {shareFeedback
+            ? <span className="text-[10px] text-indigo-400 font-semibold">✓</span>
+            : <Share2 className="w-4 h-4" />}
         </Button>
       </div>
 

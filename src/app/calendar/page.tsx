@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useApp } from "@/context/AppContext";
 import { getMoonPhase, getMoonTimes, buildNightChart, ChartPoint } from "@/lib/moon";
 import { formatTime, formatDateLabel, formatAltitude } from "@/lib/utils";
@@ -9,8 +10,18 @@ import { SkyDome } from "@/components/SkyDome";
 import { NoLocation } from "@/components/NoLocation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Sunrise, Sunset, TrendingUp, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sunrise, Sunset, TrendingUp, X, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+function findNextPhaseDate(targetLabel: "Full Moon" | "New Moon"): Date {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  for (let i = 0; i < 35; i++) {
+    if (getMoonPhase(d).label === targetLabel) return new Date(d);
+    d.setDate(d.getDate() + 1);
+  }
+  return d;
+}
 
 const DAY_HEADERS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
@@ -25,7 +36,8 @@ function getCalendarDays(year: number, month: number): (Date | null)[] {
 }
 
 export default function CalendarPage() {
-  const { location, preferences } = useApp();
+  const router = useRouter();
+  const { location, preferences, setDayOffset } = useApp();
 
   const today = useMemo(() => new Date(), []);
   const [viewYear, setViewYear] = useState(today.getFullYear());
@@ -110,6 +122,29 @@ export default function CalendarPage() {
         </Button>
       </div>
 
+      {/* Phase shortcuts */}
+      <div className="flex gap-2 -mt-1">
+        {(["Full Moon", "New Moon"] as const).map((label) => {
+          const emoji = label === "Full Moon" ? "🌕" : "🌑";
+          return (
+            <button
+              key={label}
+              onClick={() => {
+                const d = findNextPhaseDate(label);
+                setViewYear(d.getFullYear());
+                setViewMonth(d.getMonth());
+                setSelectedDate(d);
+                setActivePoint(null);
+              }}
+              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <span>{emoji}</span>
+              Next {label}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Calendar grid */}
       <div>
         {/* Day-of-week headers */}
@@ -164,9 +199,25 @@ export default function CalendarPage() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold text-white">{formatDateLabel(selectedDate)}</h2>
-            <button onClick={() => { setSelectedDate(null); setActivePoint(null); }} className="text-white/30 hover:text-white/70 transition-colors">
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const sel = new Date(selectedDate);
+                  sel.setHours(0, 0, 0, 0);
+                  const diff = Math.round((sel.getTime() - today.getTime()) / 86400000);
+                  setDayOffset(diff);
+                  router.push("/tonight");
+                }}
+                className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+              >
+                View night <ArrowRight className="w-3 h-3" />
+              </button>
+              <button onClick={() => { setSelectedDate(null); setActivePoint(null); }} className="text-white/30 hover:text-white/70 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {/* Quick stats row */}

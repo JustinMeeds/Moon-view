@@ -20,10 +20,14 @@ export function Compass({ azimuthDeg, altitudeDeg, size = 180, nightMode = false
   const tickMin   = nightMode ? "rgba(200,0,0,0.18)"  : "rgba(255,255,255,0.15)";
   const labelN    = nightMode ? "rgba(255,80,0,0.95)"  : "rgba(251,191,36,0.9)";
   const labelCard = nightMode ? "rgba(200,40,0,0.55)"  : "rgba(255,255,255,0.4)";
-  const needle    = nightMode ? "rgba(180,40,0,0.55)"  : "rgba(165,180,252,0.5)";
-  const centerDot = nightMode ? "rgba(200,50,0,0.65)"  : "rgba(165,180,252,0.6)";
 
   const moonVisible = altitudeDeg > 0;
+  const needle    = nightMode
+    ? (moonVisible ? "rgba(180,40,0,0.55)"  : "rgba(100,0,0,0.2)")
+    : (moonVisible ? "rgba(165,180,252,0.5)" : "rgba(165,180,252,0.15)");
+  const centerDot = nightMode
+    ? (moonVisible ? "rgba(200,50,0,0.65)"  : "rgba(100,0,0,0.2)")
+    : (moonVisible ? "rgba(165,180,252,0.6)" : "rgba(165,180,252,0.2)");
   const moonFill    = nightMode
     ? (moonVisible ? "rgba(200,40,0,0.18)"  : "rgba(100,0,0,0.08)")
     : (moonVisible ? "rgba(253,224,71,0.2)" : "rgba(255,255,255,0.06)");

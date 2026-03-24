@@ -150,6 +150,9 @@ export function MoonChart({ data, moonrise, moonset, peak, use24h, nightMode = f
 
       {/* Slider scrubber */}
       <div className="px-1">
+        {activeIndex === null && (
+          <p className="text-center text-[10px] text-white/25 mb-1 tracking-wide">Drag to explore</p>
+        )}
         <input
           ref={sliderRef}
           type="range"

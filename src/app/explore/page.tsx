@@ -5,6 +5,7 @@ import { useApp } from "@/context/AppContext";
 import { buildNightChart, ChartPoint } from "@/lib/moon";
 import { formatTime, formatDateLabel, formatAltitude } from "@/lib/utils";
 import { MoonChart } from "@/components/MoonChart";
+import { SkyDome } from "@/components/SkyDome";
 import { NoLocation } from "@/components/NoLocation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,7 +47,7 @@ export default function ExplorePage() {
   if (!location) return <NoLocation />;
   if (!summary) return null;
 
-  const { use24h, useCardinal } = preferences;
+  const { use24h, useCardinal, nightMode } = preferences;
   const current = activePoint ?? summary.peak;
 
   const formatDir = (p: ChartPoint | null) => {
@@ -116,8 +117,29 @@ export default function ExplorePage() {
             moonset={summary.moonset}
             peak={summary.peak}
             use24h={use24h}
+            nightMode={nightMode}
             onScrub={handleScrub}
           />
+        </CardContent>
+      </Card>
+
+      {/* Sky dome */}
+      <Card>
+        <CardHeader><CardTitle>Sky Path</CardTitle></CardHeader>
+        <CardContent>
+          <SkyDome
+            data={summary.chartPoints}
+            highlightTime={activePoint?.time ?? null}
+            moonrise={summary.moonrise}
+            moonset={summary.moonset}
+            peak={summary.peak}
+            use24h={use24h}
+            nightMode={nightMode}
+            size={240}
+          />
+          <p className="text-[10px] text-white/30 text-center mt-2">
+            Polar view — N at top, horizon at edge. Drag the chart slider to move the dot.
+          </p>
         </CardContent>
       </Card>
 

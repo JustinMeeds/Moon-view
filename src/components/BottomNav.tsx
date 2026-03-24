@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Moon, BarChart2, CalendarDays, Settings } from "lucide-react";
+import { Moon, BarChart2, CalendarDays, Settings, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/context/AppContext";
 
@@ -16,7 +16,7 @@ const NAV_ITEMS = [
 
 export function BottomNav() {
   const pathname = usePathname();
-  const { preferences } = useApp();
+  const { preferences, setPreferences } = useApp();
   const { nightMode } = preferences;
 
   const activeColor   = nightMode ? "text-[#ff3300]"          : "text-indigo-400";
@@ -45,6 +45,18 @@ export function BottomNav() {
             </Link>
           );
         })}
+        {/* Night mode toggle */}
+        <button
+          onClick={() => setPreferences({ nightMode: !nightMode })}
+          title={nightMode ? "Exit night mode" : "Enter night mode"}
+          className={cn(
+            "flex-1 flex flex-col items-center gap-0.5 py-3 text-[10px] font-medium transition-colors",
+            nightMode ? `${activeColor} ${glowClass}` : `${inactiveColor} hover:${nightMode ? "text-[rgba(220,50,0,0.7)]" : "text-white/70"}`
+          )}
+        >
+          {nightMode ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+          Night
+        </button>
       </div>
     </nav>
   );

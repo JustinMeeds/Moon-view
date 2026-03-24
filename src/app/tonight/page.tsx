@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Sunrise, Sunset, TrendingUp } from "lucide-react";
+import { Countdown } from "@/components/Countdown";
 
 export default function TonightPage() {
   const { location, preferences, dayOffset, setDayOffset } = useApp();
@@ -71,6 +72,9 @@ export default function TonightPage() {
           ← Back to tonight
         </button>
       )}
+
+      {/* Countdown to next rise/set — today only */}
+      {dayOffset === 0 && <Countdown location={location} use24h={use24h} />}
 
       {/* Scrubber readout */}
       {current && (

@@ -37,7 +37,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [preferences, setPrefs] = useState<AppPreferences>(DEFAULT_PREFERENCES);
-  const [dayOffset, setDayOffset] = useState(0);
+  const [dayOffset, setDayOffsetState] = useState(() => {
+    try {
+      const v = sessionStorage.getItem("moon_day_offset");
+      return v ? parseInt(v, 10) : 0;
+    } catch { return 0; }
+  });
+
+  const setDayOffset = useCallback((offset: number) => {
+    setDayOffsetState(offset);
+    try { sessionStorage.setItem("moon_day_offset", String(offset)); } catch {}
+  }, []);
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
 
   // Restore persisted location + prefs on mount
