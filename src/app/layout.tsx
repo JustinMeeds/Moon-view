@@ -39,7 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ServiceWorkerRegistrar />
           <NightModeApplier />
           {/* Main content — padded so it clears the bottom nav */}
-          <main className="max-w-lg mx-auto pb-24 min-h-screen" style={{ paddingTop: "max(env(safe-area-inset-top, 0px) + 3.25rem, 4rem)" }}>
+          <main className="max-w-lg mx-auto pb-24 min-h-screen" style={{ paddingTop: "max(env(safe-area-inset-top, 0px) + 0.5rem, 0.75rem)" }}>
             {children}
           </main>
           <BottomNav />
