@@ -41,7 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <NightModeApplier />
           <NightToggle />
           {/* Main content — padded so it clears the bottom nav */}
-          <main className="max-w-lg mx-auto pb-24 min-h-screen" style={{ paddingTop: "max(env(safe-area-inset-top), 1.5rem)" }}>
+          <main className="max-w-lg mx-auto pb-24 min-h-screen" style={{ paddingTop: "max(env(safe-area-inset-top, 0px) + 3.25rem, 4rem)" }}>
             {children}
           </main>
           <BottomNav />
