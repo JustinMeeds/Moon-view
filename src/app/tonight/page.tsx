@@ -9,11 +9,17 @@ import { SkyDome } from "@/components/SkyDome";
 import { NoLocation } from "@/components/NoLocation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Sunrise, Sunset, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight, Sunrise, Sunset, TrendingUp } from "lucide-react";
 
 export default function TonightPage() {
-  const { location, preferences, dayOffset } = useApp();
+  const { location, preferences, dayOffset, setDayOffset } = useApp();
   const [activePoint, setActivePoint] = useState<ChartPoint | null>(null);
+
+  const shiftDay = (delta: number) => {
+    setDayOffset(dayOffset + delta);
+    setActivePoint(null);
+  };
 
   const baseDate = useMemo(() => {
     const d = new Date();
@@ -44,10 +50,27 @@ export default function TonightPage() {
 
   return (
     <div className="px-4 pt-6 space-y-5">
-      <div>
-        <h1 className="text-xl font-bold text-white">{dayLabel}</h1>
-        <p className="text-xs text-white/40 mt-0.5">{formatDateLabel(baseDate)} · 6 PM → 6 AM</p>
+      {/* Date navigator */}
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon" onClick={() => shiftDay(-1)} className="shrink-0 w-9 h-9">
+          <ChevronLeft className="w-5 h-5" />
+        </Button>
+        <div className="flex-1 text-center">
+          <h1 className="text-lg font-bold text-white">{dayLabel}</h1>
+          <p className="text-xs text-white/40">{formatDateLabel(baseDate)} · 6 PM → 6 AM</p>
+        </div>
+        <Button variant="ghost" size="icon" onClick={() => shiftDay(1)} className="shrink-0 w-9 h-9">
+          <ChevronRight className="w-5 h-5" />
+        </Button>
       </div>
+      {dayOffset !== 0 && (
+        <button
+          onClick={() => { setDayOffset(0); setActivePoint(null); }}
+          className="w-full text-center text-xs text-indigo-400 hover:text-indigo-300 transition-colors py-0.5 -mt-2"
+        >
+          ← Back to tonight
+        </button>
+      )}
 
       {/* Scrubber readout */}
       {current && (
