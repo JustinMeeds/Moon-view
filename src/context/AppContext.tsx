@@ -19,6 +19,9 @@ interface AppContextValue {
   setManualLocation: (loc: Location) => void;
   preferences: AppPreferences;
   setPreferences: (prefs: Partial<AppPreferences>) => void;
+  // Shared day offset: 0=today, -1=yesterday, +1=tomorrow, etc.
+  dayOffset: number;
+  setDayOffset: (offset: number) => void;
   user: { id: string; email?: string } | null;
   signIn: (email: string, password: string) => Promise<string | null>;
   signOut: () => Promise<void>;
@@ -34,6 +37,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [preferences, setPrefs] = useState<AppPreferences>(DEFAULT_PREFERENCES);
+  const [dayOffset, setDayOffset] = useState(0);
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
 
   // Restore persisted location + prefs on mount
@@ -137,6 +141,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setManualLocation,
         preferences,
         setPreferences,
+        dayOffset,
+        setDayOffset,
         user,
         signIn,
         signOut,

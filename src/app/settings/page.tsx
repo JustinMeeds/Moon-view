@@ -16,6 +16,8 @@ import {
   Trash2,
   Clock,
   Compass,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 // Simple toggle component
@@ -170,6 +172,39 @@ export default function SettingsPage() {
       <div>
         <h1 className="text-xl font-bold text-white">Settings</h1>
       </div>
+
+      {/* Night mode — big prominent toggle */}
+      <button
+        onClick={() => setPreferences({ nightMode: !preferences.nightMode })}
+        className={`w-full flex items-center gap-4 rounded-2xl px-5 py-4 border transition-colors ${
+          preferences.nightMode
+            ? "bg-[rgba(100,0,0,0.2)] border-[rgba(200,0,0,0.35)]"
+            : "bg-white/5 border-white/10 hover:bg-white/10"
+        }`}
+      >
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+          preferences.nightMode ? "bg-[rgba(180,0,0,0.25)]" : "bg-white/10"
+        }`}>
+          {preferences.nightMode
+            ? <Eye className="w-5 h-5 text-[#ff3300]" />
+            : <EyeOff className="w-5 h-5 text-white/60" />}
+        </div>
+        <div className="flex-1 text-left">
+          <p className={`font-semibold text-sm ${preferences.nightMode ? "text-[#ff3300]" : "text-white"}`}>
+            Night Mode {preferences.nightMode ? "On" : "Off"}
+          </p>
+          <p className="text-xs text-white/40 mt-0.5">
+            Black background, red linework — preserves dark adaptation
+          </p>
+        </div>
+        <div className={`w-12 h-6 rounded-full flex items-center px-0.5 transition-colors shrink-0 ${
+          preferences.nightMode ? "bg-[#cc0000]" : "bg-white/20"
+        }`}>
+          <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${
+            preferences.nightMode ? "translate-x-6" : "translate-x-0"
+          }`} />
+        </div>
+      </button>
 
       {/* Display preferences */}
       <Card>

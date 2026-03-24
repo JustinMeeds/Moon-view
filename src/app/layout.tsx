@@ -3,6 +3,8 @@ import "./globals.css";
 import { AppProvider } from "@/context/AppContext";
 import { BottomNav } from "@/components/BottomNav";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
+import { NightModeApplier } from "@/components/NightModeApplier";
+import { NightToggle } from "@/components/NightToggle";
 
 export const metadata: Metadata = {
   title: "Moon Tracker",
@@ -36,6 +38,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full bg-[#030712] text-white">
         <AppProvider>
           <ServiceWorkerRegistrar />
+          <NightModeApplier />
+          <NightToggle />
           {/* Main content — padded so it clears the bottom nav */}
           <main className="max-w-lg mx-auto pb-24 min-h-screen" style={{ paddingTop: "max(env(safe-area-inset-top), 1.5rem)" }}>
             {children}

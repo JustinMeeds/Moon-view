@@ -7,6 +7,7 @@ import { formatAltitude, formatTime, formatDeg, formatDateLabel } from "@/lib/ut
 import { Compass } from "@/components/Compass";
 import { LocationBar } from "@/components/LocationBar";
 import { NoLocation } from "@/components/NoLocation";
+import { Countdown } from "@/components/Countdown";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,20 +23,9 @@ function useNow() {
   return now;
 }
 
-function isSameDay(a: Date, b: Date) {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
-}
-
 export default function HomePage() {
-  const { location, preferences, requestLocation } = useApp();
+  const { location, preferences, requestLocation, dayOffset, setDayOffset } = useApp();
   const now = useNow();
-
-  // Offset in days from today (0 = today, -1 = yesterday, +1 = tomorrow…)
-  const [dayOffset, setDayOffset] = useState(0);
 
   useEffect(() => {
     if (!location) requestLocation();
@@ -43,74 +33,79 @@ export default function HomePage() {
 
   if (!location) return <NoLocation />;
 
-  // The date we're showing — today's live clock when offset=0, else midnight of that day
+  const isToday = dayOffset === 0;
+
   const displayDate = (() => {
-    if (dayOffset === 0) return now;
+    if (isToday) return now;
     const d = new Date(now);
     d.setDate(d.getDate() + dayOffset);
-    d.setHours(12, 0, 0, 0); // noon for non-today dates
+    d.setHours(12, 0, 0, 0);
     return d;
   })();
 
-  const isToday = dayOffset === 0;
-
-  const moonPos = getMoonPosition(displayDate, location);
+  const moonPos   = getMoonPosition(displayDate, location);
   const moonPhase = getMoonPhase(displayDate);
   const moonTimes = getMoonTimes(displayDate, location);
 
-  const { use24h, useCardinal } = preferences;
+  const { use24h, useCardinal, nightMode } = preferences;
 
   const directionLabel = useCardinal
     ? `${moonPos.cardinal} (${formatDeg(moonPos.azimuthDeg)})`
     : formatDeg(moonPos.azimuthDeg);
 
+  const dayLabel =
+    isToday        ? "Today"
+    : dayOffset === 1  ? "Tomorrow"
+    : dayOffset === -1 ? "Yesterday"
+    : formatDateLabel(displayDate);
+
+  const graphLabel =
+    isToday        ? "Tonight's Graph"
+    : dayOffset === 1  ? "Tomorrow's Graph"
+    : `${formatDateLabel(displayDate)} Graph`;
+
   return (
     <div className="px-4 pt-2 space-y-5">
-      {/* Location */}
       <LocationBar />
 
       {/* Date navigator */}
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={() => setDayOffset((d) => d - 1)} className="shrink-0 w-9 h-9">
+        <Button variant="ghost" size="icon" onClick={() => setDayOffset(dayOffset - 1)} className="shrink-0 w-9 h-9">
           <ChevronLeft className="w-5 h-5" />
         </Button>
         <div className="flex-1 text-center">
-          <p className="text-sm font-medium text-white">
-            {isToday ? "Today" : dayOffset === 1 ? "Tomorrow" : dayOffset === -1 ? "Yesterday" : formatDateLabel(displayDate)}
-          </p>
+          <p className="text-sm font-medium text-white">{dayLabel}</p>
           <p className="text-xs text-white/40">
             {formatDateLabel(displayDate)}{isToday ? ` · ${formatTime(now, use24h)}` : ""}
           </p>
         </div>
-        <Button variant="ghost" size="icon" onClick={() => setDayOffset((d) => d + 1)} className="shrink-0 w-9 h-9">
+        <Button variant="ghost" size="icon" onClick={() => setDayOffset(dayOffset + 1)} className="shrink-0 w-9 h-9">
           <ChevronRight className="w-5 h-5" />
         </Button>
       </div>
 
-      {/* Jump back to today if browsing another date */}
       {!isToday && (
         <button
           onClick={() => setDayOffset(0)}
-          className="w-full text-center text-xs text-indigo-400 hover:text-indigo-300 transition-colors py-0.5"
+          className="w-full text-center text-xs text-indigo-400 hover:text-indigo-300 transition-colors py-0.5 -mt-2"
         >
           ← Back to today
         </button>
       )}
 
+      {isToday && <Countdown location={location} use24h={use24h} />}
+
       {/* Hero readout */}
       <div className="flex items-center justify-between gap-4">
         <div className="space-y-3 flex-1">
           {isToday ? (
-            moonPos.isVisible ? (
-              <Badge variant="success">Visible Now</Badge>
-            ) : (
-              <Badge variant="muted">Below Horizon</Badge>
-            )
+            moonPos.isVisible
+              ? <Badge variant="success">Visible Now</Badge>
+              : <Badge variant="muted">Below Horizon</Badge>
           ) : (
             <Badge variant="default">{dayOffset > 0 ? "Upcoming" : "Past"}</Badge>
           )}
 
-          {/* Phase */}
           <div className="flex items-center gap-2">
             <span className="text-2xl leading-none">{moonPhase.emoji}</span>
             <div>
@@ -119,7 +114,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Direction */}
           <div>
             <p className="text-[10px] text-white/40 uppercase tracking-widest">Direction</p>
             <p className="text-2xl font-bold tracking-tight text-white leading-tight">
@@ -127,7 +121,6 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Altitude */}
           <div>
             <p className="text-[10px] text-white/40 uppercase tracking-widest">Altitude</p>
             <p className={`text-2xl font-bold leading-tight ${moonPos.isVisible ? "text-white" : "text-white/40"}`}>
@@ -136,21 +129,19 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Compass */}
         <div className="shrink-0">
           <Compass
             azimuthDeg={moonPos.azimuthDeg}
             altitudeDeg={moonPos.altitudeDeg}
             size={168}
+            nightMode={nightMode}
           />
         </div>
       </div>
 
       {/* Moonrise / Moonset */}
       <Card>
-        <CardHeader>
-          <CardTitle>{isToday ? "Today" : formatDateLabel(displayDate)}</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle>{dayLabel}</CardTitle></CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-4">
             <div className="flex items-center gap-3">
@@ -181,9 +172,7 @@ export default function HomePage() {
 
       {/* Illumination */}
       <Card>
-        <CardHeader>
-          <CardTitle>Illumination</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle>Illumination</CardTitle></CardHeader>
         <CardContent>
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
@@ -200,11 +189,10 @@ export default function HomePage() {
         </CardContent>
       </Card>
 
-      {/* CTA */}
       <Link href="/tonight">
         <Button variant="secondary" size="lg" className="w-full">
           <Moon className="w-5 h-5" />
-          Tonight&apos;s Graph
+          {graphLabel}
           <ArrowRight className="w-4 h-4 ml-auto" />
         </Button>
       </Link>

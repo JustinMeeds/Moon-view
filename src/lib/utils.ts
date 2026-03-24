@@ -56,3 +56,22 @@ export function buildTimeRange(start: Date, end: Date, stepMinutes = 15): Date[]
 export function formatDateLabel(date: Date): string {
   return date.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
 }
+
+/** Format a millisecond duration as "2h 14m" or "42m" or "now" */
+export function formatDuration(ms: number): string {
+  const totalMinutes = Math.round(ms / 60_000);
+  if (totalMinutes < 1) return "now";
+  if (totalMinutes < 60) return `${totalMinutes}m`;
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return m === 0 ? `${h}h` : `${h}h ${m}m`;
+}
+
+/** Return true if two dates fall on the same calendar day */
+export function isSameDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}

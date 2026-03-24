@@ -5,31 +5,37 @@ import { useApp } from "@/context/AppContext";
 import { buildNightChart, ChartPoint } from "@/lib/moon";
 import { formatTime, formatDateLabel, formatAltitude } from "@/lib/utils";
 import { MoonChart } from "@/components/MoonChart";
+import { SkyDome } from "@/components/SkyDome";
 import { NoLocation } from "@/components/NoLocation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Sunrise, Sunset, TrendingUp } from "lucide-react";
 
 export default function TonightPage() {
-  const { location, preferences } = useApp();
+  const { location, preferences, dayOffset } = useApp();
   const [activePoint, setActivePoint] = useState<ChartPoint | null>(null);
 
-  const tonight = useMemo(() => new Date(), []);
+  const baseDate = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + dayOffset);
+    return d;
+  }, [dayOffset]);
 
   const summary = useMemo(() => {
     if (!location) return null;
-    return buildNightChart(tonight, location);
-  }, [location, tonight]);
+    return buildNightChart(baseDate, location);
+  }, [location, baseDate]);
 
-  const handleScrub = useCallback((point: ChartPoint) => {
-    setActivePoint(point);
-  }, []);
+  const handleScrub = useCallback((point: ChartPoint) => setActivePoint(point), []);
 
   if (!location) return <NoLocation />;
   if (!summary) return null;
 
-  const { use24h, useCardinal } = preferences;
+  const { use24h, useCardinal, nightMode } = preferences;
   const current = activePoint ?? summary.peak;
+
+  const isToday   = dayOffset === 0;
+  const dayLabel  = isToday ? "Tonight" : dayOffset === 1 ? "Tomorrow night" : formatDateLabel(baseDate);
 
   const formatDir = (p: ChartPoint | null) => {
     if (!p) return "—";
@@ -39,8 +45,8 @@ export default function TonightPage() {
   return (
     <div className="px-4 pt-6 space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-white">Tonight</h1>
-        <p className="text-xs text-white/40 mt-0.5">{formatDateLabel(tonight)} · 6 PM → 6 AM</p>
+        <h1 className="text-xl font-bold text-white">{dayLabel}</h1>
+        <p className="text-xs text-white/40 mt-0.5">{formatDateLabel(baseDate)} · 6 PM → 6 AM</p>
       </div>
 
       {/* Scrubber readout */}
@@ -62,20 +68,16 @@ export default function TonightPage() {
           </div>
           <div className="text-center">
             <p className="text-[10px] text-white/40 uppercase tracking-widest mb-1">Status</p>
-            {current.isVisible ? (
-              <Badge variant="success" className="text-[10px] py-0.5">Visible</Badge>
-            ) : (
-              <Badge variant="muted" className="text-[10px] py-0.5">Below</Badge>
-            )}
+            {current.isVisible
+              ? <Badge variant="success" className="text-[10px] py-0.5">Visible</Badge>
+              : <Badge variant="muted" className="text-[10px] py-0.5">Below</Badge>}
           </div>
         </div>
       )}
 
-      {/* Chart */}
+      {/* Altitude chart */}
       <Card>
-        <CardHeader>
-          <CardTitle>Altitude Over Time</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle>Altitude Over Time</CardTitle></CardHeader>
         <CardContent>
           <MoonChart
             data={summary.chartPoints}
@@ -83,37 +85,51 @@ export default function TonightPage() {
             moonset={summary.moonset}
             peak={summary.peak}
             use24h={use24h}
+            nightMode={nightMode}
             onScrub={handleScrub}
           />
-          {/* Legend */}
           <div className="flex gap-4 mt-3 text-[10px] text-white/40">
             <span className="flex items-center gap-1.5">
-              <span className="inline-block w-3 border-t border-dashed border-amber-400/50" />
-              Moonrise/set
+              <span className="inline-block w-3 border-t border-dashed border-amber-400/50" />Moonrise/set
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="inline-block w-3 border-t border-dashed border-indigo-400/50" />
-              Peak
+              <span className="inline-block w-3 border-t border-dashed border-indigo-400/50" />Peak
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="inline-block w-3 border-t border-dashed border-white/25" />
-              Horizon
+              <span className="inline-block w-3 border-t border-dashed border-white/25" />Horizon
             </span>
           </div>
         </CardContent>
       </Card>
 
-      {/* Rise/Set/Peak summary */}
+      {/* Sky dome */}
       <Card>
-        <CardHeader>
-          <CardTitle>Night Summary</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle>Sky Path</CardTitle></CardHeader>
+        <CardContent>
+          <SkyDome
+            data={summary.chartPoints}
+            highlightTime={activePoint?.time ?? null}
+            moonrise={summary.moonrise}
+            moonset={summary.moonset}
+            peak={summary.peak}
+            use24h={use24h}
+            nightMode={nightMode}
+            size={260}
+          />
+          <p className="text-[10px] text-white/30 text-center mt-2">
+            Polar view — N at top, horizon at edge. Drag the chart slider to move the dot.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Night summary */}
+      <Card>
+        <CardHeader><CardTitle>Night Summary</CardTitle></CardHeader>
         <CardContent>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm text-white/70">
-                <Sunrise className="w-4 h-4 text-amber-400" />
-                Moonrise
+                <Sunrise className="w-4 h-4 text-amber-400" />Moonrise
               </div>
               <span className="text-sm font-semibold text-white">
                 {summary.moonrise ? formatTime(summary.moonrise, use24h) : "—"}
@@ -122,8 +138,7 @@ export default function TonightPage() {
             <div className="h-px bg-white/5" />
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm text-white/70">
-                <TrendingUp className="w-4 h-4 text-indigo-400" />
-                Peak altitude
+                <TrendingUp className="w-4 h-4 text-indigo-400" />Peak altitude
               </div>
               <span className="text-sm font-semibold text-white">
                 {summary.peak
@@ -134,8 +149,7 @@ export default function TonightPage() {
             <div className="h-px bg-white/5" />
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm text-white/70">
-                <Sunset className="w-4 h-4 text-indigo-400" />
-                Moonset
+                <Sunset className="w-4 h-4 text-indigo-400" />Moonset
               </div>
               <span className="text-sm font-semibold text-white">
                 {summary.moonset ? formatTime(summary.moonset, use24h) : "—"}
@@ -145,42 +159,31 @@ export default function TonightPage() {
         </CardContent>
       </Card>
 
-      {/* Best window */}
       {summary.bestWindowStart && summary.bestWindowEnd && (
         <Card>
-          <CardHeader>
-            <CardTitle>Best Viewing Window</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle>Best Viewing Window</CardTitle></CardHeader>
           <CardContent>
             <div className="flex items-center gap-3">
               <span className="text-2xl">🔭</span>
               <div>
                 <p className="text-white font-semibold">
-                  {formatTime(summary.bestWindowStart, use24h)} →{" "}
-                  {formatTime(summary.bestWindowEnd, use24h)}
+                  {formatTime(summary.bestWindowStart, use24h)} → {formatTime(summary.bestWindowEnd, use24h)}
                 </p>
-                <p className="text-xs text-white/50 mt-0.5">
-                  Moon is above the horizon during this window.
-                </p>
+                <p className="text-xs text-white/50 mt-0.5">Moon is above the horizon during this window.</p>
               </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Phase */}
       <Card>
-        <CardHeader>
-          <CardTitle>Phase</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle>Phase</CardTitle></CardHeader>
         <CardContent>
           <div className="flex items-center gap-3">
             <span className="text-3xl">{summary.phase.emoji}</span>
             <div>
               <p className="text-white font-semibold">{summary.phase.label}</p>
-              <p className="text-sm text-white/50">
-                {Math.round(summary.phase.fraction * 100)}% illuminated
-              </p>
+              <p className="text-sm text-white/50">{Math.round(summary.phase.fraction * 100)}% illuminated</p>
             </div>
           </div>
         </CardContent>

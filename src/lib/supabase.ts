@@ -17,12 +17,14 @@ export function getSupabaseClient(): SupabaseClient | null {
 export type AppPreferences = {
   use24h: boolean;
   useCardinal: boolean;
+  nightMode: boolean;
   defaultLocationId: string | null;
 };
 
 export const DEFAULT_PREFERENCES: AppPreferences = {
   use24h: false,
   useCardinal: true,
+  nightMode: false,
   defaultLocationId: null,
 };
 
