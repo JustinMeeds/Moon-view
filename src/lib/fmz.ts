@@ -63,7 +63,7 @@ async function loadFmzFeatures(): Promise<FmzFeature[]> {
   if (cachedFeatures) return cachedFeatures;
 
   const res = await fetch(FMZ_TOPOJSON_PATH);
-  if (!res.ok) throw new Error("Failed to load FMZ boundaries");
+  if (!res.ok) return []; // gracefully degrade — city fallback still works
 
   const topo: Topology = await res.json();
   const layerKey = Object.keys(topo.objects)[0];
