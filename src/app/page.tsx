@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { ArrowRight, Moon, Sunrise, Sunset } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Moon, Sunrise, Sunset } from "lucide-react";
 
 function useNow() {
   const [now, setNow] = useState(() => new Date());
@@ -22,21 +22,41 @@ function useNow() {
   return now;
 }
 
+function isSameDay(a: Date, b: Date) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
 export default function HomePage() {
   const { location, preferences, requestLocation } = useApp();
   const now = useNow();
+
+  // Offset in days from today (0 = today, -1 = yesterday, +1 = tomorrow…)
+  const [dayOffset, setDayOffset] = useState(0);
 
   useEffect(() => {
     if (!location) requestLocation();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!location) {
-    return <NoLocation />;
-  }
+  if (!location) return <NoLocation />;
 
-  const moonPos = getMoonPosition(now, location);
-  const moonPhase = getMoonPhase(now);
-  const moonTimes = getMoonTimes(now, location);
+  // The date we're showing — today's live clock when offset=0, else midnight of that day
+  const displayDate = (() => {
+    if (dayOffset === 0) return now;
+    const d = new Date(now);
+    d.setDate(d.getDate() + dayOffset);
+    d.setHours(12, 0, 0, 0); // noon for non-today dates
+    return d;
+  })();
+
+  const isToday = dayOffset === 0;
+
+  const moonPos = getMoonPosition(displayDate, location);
+  const moonPhase = getMoonPhase(displayDate);
+  const moonTimes = getMoonTimes(displayDate, location);
 
   const { use24h, useCardinal } = preferences;
 
@@ -45,23 +65,49 @@ export default function HomePage() {
     : formatDeg(moonPos.azimuthDeg);
 
   return (
-    <div className="px-4 pt-6 space-y-5">
-      {/* Header */}
-      <div className="space-y-1">
-        <LocationBar />
-        <p className="text-xs text-white/40 pl-6">
-          {formatDateLabel(now)} · {formatTime(now, use24h)}
-        </p>
+    <div className="px-4 pt-2 space-y-5">
+      {/* Location */}
+      <LocationBar />
+
+      {/* Date navigator */}
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon" onClick={() => setDayOffset((d) => d - 1)} className="shrink-0 w-9 h-9">
+          <ChevronLeft className="w-5 h-5" />
+        </Button>
+        <div className="flex-1 text-center">
+          <p className="text-sm font-medium text-white">
+            {isToday ? "Today" : dayOffset === 1 ? "Tomorrow" : dayOffset === -1 ? "Yesterday" : formatDateLabel(displayDate)}
+          </p>
+          <p className="text-xs text-white/40">
+            {formatDateLabel(displayDate)}{isToday ? ` · ${formatTime(now, use24h)}` : ""}
+          </p>
+        </div>
+        <Button variant="ghost" size="icon" onClick={() => setDayOffset((d) => d + 1)} className="shrink-0 w-9 h-9">
+          <ChevronRight className="w-5 h-5" />
+        </Button>
       </div>
+
+      {/* Jump back to today if browsing another date */}
+      {!isToday && (
+        <button
+          onClick={() => setDayOffset(0)}
+          className="w-full text-center text-xs text-indigo-400 hover:text-indigo-300 transition-colors py-0.5"
+        >
+          ← Back to today
+        </button>
+      )}
 
       {/* Hero readout */}
       <div className="flex items-center justify-between gap-4">
-        {/* Text readout */}
         <div className="space-y-3 flex-1">
-          {moonPos.isVisible ? (
-            <Badge variant="success">Visible Now</Badge>
+          {isToday ? (
+            moonPos.isVisible ? (
+              <Badge variant="success">Visible Now</Badge>
+            ) : (
+              <Badge variant="muted">Below Horizon</Badge>
+            )
           ) : (
-            <Badge variant="muted">Below Horizon</Badge>
+            <Badge variant="default">{dayOffset > 0 ? "Upcoming" : "Past"}</Badge>
           )}
 
           {/* Phase */}
@@ -103,7 +149,7 @@ export default function HomePage() {
       {/* Moonrise / Moonset */}
       <Card>
         <CardHeader>
-          <CardTitle>Today</CardTitle>
+          <CardTitle>{isToday ? "Today" : formatDateLabel(displayDate)}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-4">
@@ -114,11 +160,7 @@ export default function HomePage() {
               <div>
                 <p className="text-[10px] text-white/40 uppercase tracking-wide">Moonrise</p>
                 <p className="text-base font-semibold text-white">
-                  {moonTimes.rise
-                    ? formatTime(moonTimes.rise, use24h)
-                    : moonTimes.alwaysUp
-                    ? "Always up"
-                    : "—"}
+                  {moonTimes.rise ? formatTime(moonTimes.rise, use24h) : moonTimes.alwaysUp ? "Always up" : "—"}
                 </p>
               </div>
             </div>
@@ -129,11 +171,7 @@ export default function HomePage() {
               <div>
                 <p className="text-[10px] text-white/40 uppercase tracking-wide">Moonset</p>
                 <p className="text-base font-semibold text-white">
-                  {moonTimes.set
-                    ? formatTime(moonTimes.set, use24h)
-                    : moonTimes.alwaysDown
-                    ? "Always down"
-                    : "—"}
+                  {moonTimes.set ? formatTime(moonTimes.set, use24h) : moonTimes.alwaysDown ? "Always down" : "—"}
                 </p>
               </div>
             </div>
@@ -141,7 +179,7 @@ export default function HomePage() {
         </CardContent>
       </Card>
 
-      {/* Illumination bar */}
+      {/* Illumination */}
       <Card>
         <CardHeader>
           <CardTitle>Illumination</CardTitle>
@@ -150,9 +188,7 @@ export default function HomePage() {
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-white/60">{moonPhase.label}</span>
-              <span className="text-white font-semibold">
-                {Math.round(moonPhase.fraction * 100)}%
-              </span>
+              <span className="text-white font-semibold">{Math.round(moonPhase.fraction * 100)}%</span>
             </div>
             <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
               <div

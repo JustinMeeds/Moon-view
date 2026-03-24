@@ -37,7 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AppProvider>
           <ServiceWorkerRegistrar />
           {/* Main content — padded so it clears the bottom nav */}
-          <main className="max-w-lg mx-auto pb-24 pt-safe-top min-h-screen">
+          <main className="max-w-lg mx-auto pb-24 min-h-screen" style={{ paddingTop: "max(env(safe-area-inset-top), 1.5rem)" }}>
             {children}
           </main>
           <BottomNav />
