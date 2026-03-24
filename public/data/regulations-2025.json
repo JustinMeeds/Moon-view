@@ -1,0 +1,502 @@
+{
+  "version": "2025-2026",
+  "effective_date": "2025-04-15",
+  "next_update_expected": "2026-04-01",
+  "last_verified_by_human": "2026-03-24",
+  "disclaimer": "Always verify with the official Ontario Fishing Regulations Summary before keeping fish. This data is compiled in good faith but may contain errors.",
+  "species": [
+    {
+      "id": "largemouth_bass",
+      "common_name": "Largemouth Bass",
+      "scientific_name": "Micropterus salmoides",
+      "default": {
+        "seasons": [
+          {
+            "type": "catch_and_release",
+            "open_month": 5, "open_day": 1,
+            "close_month": 6, "close_day": 27,
+            "label": "Catch & release only"
+          },
+          {
+            "type": "open",
+            "open_month": 6, "open_day": 28,
+            "close_month": 11, "close_day": 30,
+            "label": "Open season"
+          }
+        ],
+        "size_limit_cm": 35,
+        "size_limit_type": "minimum",
+        "slot_range_cm": null,
+        "possession_limit": 6,
+        "daily_limit": 6,
+        "notes": null
+      },
+      "fmz_overrides": [
+        {
+          "fmz_ids": [16, 17],
+          "rule": {
+            "size_limit_cm": 35,
+            "size_limit_type": "slot",
+            "slot_range_cm": [35, 50],
+            "notes": "Slot limit: only fish outside 35–50 cm range may be kept"
+          },
+          "notes": "FMZ 16/17 slot limit applies to both largemouth and smallmouth bass"
+        },
+        {
+          "fmz_ids": [1, 2, 3, 4, 5, 6, 7],
+          "rule": {
+            "seasons": [
+              {
+                "type": "catch_and_release",
+                "open_month": 5, "open_day": 1,
+                "close_month": 6, "close_day": 27,
+                "label": "Catch & release only"
+              },
+              {
+                "type": "open",
+                "open_month": 6, "open_day": 28,
+                "close_month": 11, "close_day": 30,
+                "label": "Open season"
+              }
+            ],
+            "possession_limit": 6,
+            "daily_limit": 6
+          },
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "smallmouth_bass",
+      "common_name": "Smallmouth Bass",
+      "scientific_name": "Micropterus dolomieu",
+      "default": {
+        "seasons": [
+          {
+            "type": "catch_and_release",
+            "open_month": 5, "open_day": 1,
+            "close_month": 6, "close_day": 27,
+            "label": "Catch & release only"
+          },
+          {
+            "type": "open",
+            "open_month": 6, "open_day": 28,
+            "close_month": 11, "close_day": 30,
+            "label": "Open season"
+          }
+        ],
+        "size_limit_cm": 35,
+        "size_limit_type": "minimum",
+        "slot_range_cm": null,
+        "possession_limit": 6,
+        "daily_limit": 6,
+        "notes": null
+      },
+      "fmz_overrides": [
+        {
+          "fmz_ids": [16, 17],
+          "rule": {
+            "size_limit_cm": 35,
+            "size_limit_type": "slot",
+            "slot_range_cm": [35, 50],
+            "notes": "Slot limit: only fish outside 35–50 cm range may be kept"
+          },
+          "notes": "FMZ 16/17 slot limit applies to both largemouth and smallmouth bass"
+        }
+      ]
+    },
+    {
+      "id": "walleye",
+      "common_name": "Walleye",
+      "scientific_name": "Sander vitreus",
+      "default": {
+        "seasons": [
+          {
+            "type": "open",
+            "open_month": 5, "open_day": 3,
+            "close_month": 3, "close_day": 31,
+            "label": "Open season"
+          }
+        ],
+        "size_limit_cm": 40,
+        "size_limit_type": "minimum",
+        "slot_range_cm": null,
+        "possession_limit": 6,
+        "daily_limit": 6,
+        "notes": "Combined walleye and sauger limit"
+      },
+      "fmz_overrides": [
+        {
+          "fmz_ids": [16],
+          "rule": {
+            "size_limit_cm": 40,
+            "size_limit_type": "slot",
+            "slot_range_cm": [40, 50],
+            "possession_limit": 2,
+            "daily_limit": 2,
+            "notes": "Lake Erie slot limit: only fish outside 40–50 cm may be kept. Only 2 fish over 50 cm in possession."
+          },
+          "notes": "Lake Erie special regulation"
+        },
+        {
+          "fmz_ids": [1],
+          "rule": {
+            "possession_limit": 4,
+            "daily_limit": 4
+          },
+          "notes": "Lake of the Woods reduced limit"
+        },
+        {
+          "fmz_ids": [17],
+          "rule": {
+            "size_limit_cm": 45,
+            "possession_limit": 4,
+            "daily_limit": 4,
+            "notes": "Lake Ontario zone: 45 cm minimum, reduced possession limit"
+          },
+          "notes": "Lake Ontario / Lake Simcoe special regulation"
+        }
+      ]
+    },
+    {
+      "id": "northern_pike",
+      "common_name": "Northern Pike",
+      "scientific_name": "Esox lucius",
+      "default": {
+        "seasons": [
+          {
+            "type": "open",
+            "open_month": 1, "open_day": 1,
+            "close_month": 12, "close_day": 31,
+            "label": "Open year-round"
+          }
+        ],
+        "size_limit_cm": null,
+        "size_limit_type": null,
+        "slot_range_cm": null,
+        "possession_limit": 6,
+        "daily_limit": 6,
+        "notes": null
+      },
+      "fmz_overrides": [
+        {
+          "fmz_ids": [16],
+          "rule": {
+            "size_limit_cm": 75,
+            "size_limit_type": "minimum",
+            "possession_limit": 2,
+            "daily_limit": 2
+          },
+          "notes": "Lake Erie special regulation"
+        },
+        {
+          "fmz_ids": [17],
+          "rule": {
+            "size_limit_cm": 75,
+            "size_limit_type": "minimum",
+            "possession_limit": 2,
+            "daily_limit": 2
+          },
+          "notes": "Lake Ontario zone special regulation"
+        }
+      ]
+    },
+    {
+      "id": "muskellunge",
+      "common_name": "Muskellunge",
+      "scientific_name": "Esox masquinongy",
+      "default": {
+        "seasons": [
+          {
+            "type": "open",
+            "open_month": 7, "open_day": 4,
+            "close_month": 11, "close_day": 30,
+            "label": "Open season"
+          }
+        ],
+        "size_limit_cm": 97,
+        "size_limit_type": "minimum",
+        "slot_range_cm": null,
+        "possession_limit": 1,
+        "daily_limit": 1,
+        "notes": null
+      },
+      "fmz_overrides": [
+        {
+          "fmz_ids": [1, 2, 3],
+          "rule": {
+            "size_limit_cm": 97,
+            "possession_limit": 1,
+            "daily_limit": 1,
+            "seasons": [
+              {
+                "type": "open",
+                "open_month": 6, "open_day": 14,
+                "close_month": 11, "close_day": 30,
+                "label": "Open season (earlier opener in FMZ 1–3)"
+              }
+            ]
+          },
+          "notes": "Earlier season opener in northwest Ontario FMZs"
+        },
+        {
+          "fmz_ids": [17],
+          "rule": {
+            "size_limit_cm": 112,
+            "notes": "St. Lawrence River / eastern Ontario: 112 cm minimum size"
+          },
+          "notes": "FMZ 17 larger minimum size"
+        }
+      ]
+    },
+    {
+      "id": "lake_trout",
+      "common_name": "Lake Trout",
+      "scientific_name": "Salvelinus namaycush",
+      "default": {
+        "seasons": [
+          {
+            "type": "open",
+            "open_month": 1, "open_day": 1,
+            "close_month": 9, "close_day": 15,
+            "label": "Open season"
+          },
+          {
+            "type": "closed",
+            "open_month": 9, "open_day": 16,
+            "close_month": 12, "close_day": 31,
+            "label": "Closed for spawning"
+          }
+        ],
+        "size_limit_cm": null,
+        "size_limit_type": null,
+        "slot_range_cm": null,
+        "possession_limit": 2,
+        "daily_limit": 2,
+        "notes": null
+      },
+      "fmz_overrides": [
+        {
+          "fmz_ids": [7],
+          "rule": {
+            "size_limit_cm": 50,
+            "size_limit_type": "minimum",
+            "possession_limit": 2,
+            "daily_limit": 2,
+            "seasons": [
+              {
+                "type": "open",
+                "open_month": 1, "open_day": 1,
+                "close_month": 9, "close_day": 30,
+                "label": "Open season"
+              }
+            ]
+          },
+          "notes": "Lake Superior special regulation"
+        },
+        {
+          "fmz_ids": [17],
+          "rule": {
+            "possession_limit": 2,
+            "seasons": [
+              {
+                "type": "open",
+                "open_month": 1, "open_day": 1,
+                "close_month": 9, "close_day": 14,
+                "label": "Open season"
+              },
+              {
+                "type": "closed",
+                "open_month": 9, "open_day": 15,
+                "close_month": 12, "close_day": 31,
+                "label": "Closed"
+              }
+            ]
+          },
+          "notes": "Lake Ontario / Lake Simcoe: closes Sept 14"
+        }
+      ]
+    },
+    {
+      "id": "rainbow_trout",
+      "common_name": "Rainbow Trout (Steelhead)",
+      "scientific_name": "Oncorhynchus mykiss",
+      "default": {
+        "seasons": [
+          {
+            "type": "open",
+            "open_month": 1, "open_day": 1,
+            "close_month": 12, "close_day": 31,
+            "label": "Open year-round"
+          }
+        ],
+        "size_limit_cm": 35,
+        "size_limit_type": "minimum",
+        "slot_range_cm": null,
+        "possession_limit": 5,
+        "daily_limit": 5,
+        "notes": "Combined with brown trout in many zones"
+      },
+      "fmz_overrides": [
+        {
+          "fmz_ids": [17],
+          "rule": {
+            "size_limit_cm": 47,
+            "size_limit_type": "minimum",
+            "possession_limit": 5,
+            "daily_limit": 5,
+            "notes": "Lake Ontario tributaries: 47 cm minimum (steelhead run tributaries)"
+          },
+          "notes": "Lake Ontario tributary regulation"
+        },
+        {
+          "fmz_ids": [7],
+          "rule": {
+            "size_limit_cm": 35,
+            "possession_limit": 5,
+            "daily_limit": 5
+          },
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "brown_trout",
+      "common_name": "Brown Trout",
+      "scientific_name": "Salmo trutta",
+      "default": {
+        "seasons": [
+          {
+            "type": "open",
+            "open_month": 1, "open_day": 1,
+            "close_month": 12, "close_day": 31,
+            "label": "Open year-round"
+          }
+        ],
+        "size_limit_cm": 35,
+        "size_limit_type": "minimum",
+        "slot_range_cm": null,
+        "possession_limit": 5,
+        "daily_limit": 5,
+        "notes": "Combined with rainbow trout in many zones. Some streams are catch-and-release only — check local signs."
+      },
+      "fmz_overrides": [
+        {
+          "fmz_ids": [17],
+          "rule": {
+            "size_limit_cm": 47,
+            "size_limit_type": "minimum",
+            "seasons": [
+              {
+                "type": "open",
+                "open_month": 1, "open_day": 1,
+                "close_month": 9, "close_day": 30,
+                "label": "Open season"
+              },
+              {
+                "type": "closed",
+                "open_month": 10, "open_day": 1,
+                "close_month": 12, "close_day": 31,
+                "label": "Closed for spawning"
+              }
+            ],
+            "notes": "Lake Ontario tributaries: closed Oct 1 for spawning run"
+          },
+          "notes": "Lake Ontario tributary regulation"
+        }
+      ]
+    }
+  ],
+  "special_waters": [
+    {
+      "id": "lake_simcoe",
+      "name": "Lake Simcoe",
+      "fmz_id": 17,
+      "restriction_type": "special_limits",
+      "description": "Lake trout quota system applies. Walleye: slot limit 40–50 cm, max 2 over 50 cm in possession. Check current Lake Simcoe regulations.",
+      "centroid": [44.45, -79.35],
+      "radius_km": 30
+    },
+    {
+      "id": "lake_erie_north",
+      "name": "Lake Erie (Ontario waters)",
+      "fmz_id": 16,
+      "restriction_type": "special_limits",
+      "description": "Walleye slot limit 40–50 cm applies throughout Lake Erie Ontario waters. Yellow perch daily limit 50. Bass slot limit in effect.",
+      "centroid": [42.4, -81.2],
+      "radius_km": 50
+    },
+    {
+      "id": "kawartha_highlands",
+      "name": "Kawartha Highlands Provincial Park",
+      "fmz_id": 15,
+      "restriction_type": "special_limits",
+      "description": "Some interior lakes have catch-and-release only restrictions for lake trout. Check park regulations before fishing interior waters.",
+      "centroid": [44.85, -78.15],
+      "radius_km": 20
+    },
+    {
+      "id": "algonquin_park",
+      "name": "Algonquin Provincial Park",
+      "fmz_id": 13,
+      "restriction_type": "special_limits",
+      "description": "Brook trout and lake trout are subject to special park regulations. Some lakes are catch-and-release only. Check park interior permit conditions.",
+      "centroid": [45.5, -78.35],
+      "radius_km": 50
+    },
+    {
+      "id": "credit_river",
+      "name": "Credit River (below Hwy 401)",
+      "fmz_id": 17,
+      "restriction_type": "catch_and_release",
+      "description": "Catch-and-release only for rainbow trout and brown trout on the Credit River below Highway 401 from October 1 to April 30.",
+      "centroid": [43.57, -79.67],
+      "radius_km": 5
+    },
+    {
+      "id": "grand_river_designated",
+      "name": "Grand River (designated sections)",
+      "fmz_id": 16,
+      "restriction_type": "special_limits",
+      "description": "Designated sections of the Grand River have special catch-and-release restrictions for brown trout and rainbow trout. Check local signage.",
+      "centroid": [43.35, -80.31],
+      "radius_km": 10
+    },
+    {
+      "id": "lake_ontario_tribs",
+      "name": "Lake Ontario Tributaries",
+      "fmz_id": 17,
+      "restriction_type": "special_limits",
+      "description": "Rainbow trout and brown trout: 47 cm minimum. Brown trout closed Oct 1–Dec 31. Check specific tributary regulations.",
+      "centroid": [43.7, -79.4],
+      "radius_km": 15
+    },
+    {
+      "id": "brule_lake_algonquin",
+      "name": "Brulé Lake (Algonquin)",
+      "fmz_id": 13,
+      "restriction_type": "catch_and_release",
+      "description": "Catch-and-release only for all species. Check current Algonquin park interior regulations.",
+      "centroid": [45.75, -78.5],
+      "radius_km": 3
+    },
+    {
+      "id": "georgian_bay_islands",
+      "name": "Georgian Bay Islands National Park",
+      "fmz_id": 14,
+      "restriction_type": "special_limits",
+      "description": "National park regulations apply. Fishing requires a valid Parks Canada fishing permit in addition to Ontario fishing licence.",
+      "centroid": [44.85, -79.85],
+      "radius_km": 15
+    },
+    {
+      "id": "rideau_river_system",
+      "name": "Rideau River / Canal System",
+      "fmz_id": 18,
+      "restriction_type": "special_limits",
+      "description": "The Rideau Canal is a UNESCO World Heritage Site. Walleye: closed Jan 1–May 5. Check local regulations for specific stretches.",
+      "centroid": [44.7, -76.2],
+      "radius_km": 30
+    }
+  ]
+}

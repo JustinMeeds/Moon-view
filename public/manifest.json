@@ -1,13 +1,13 @@
 {
-  "name": "Moon Tracker",
-  "short_name": "Moon",
-  "description": "Track the Moon — position, visibility, and tonight's altitude chart.",
+  "name": "CastON — Ontario Fishing Companion",
+  "short_name": "CastON",
+  "description": "Real-time fishing conditions, solunar windows, Ontario regulations by FMZ zone, and species info.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#030712",
-  "theme_color": "#030712",
+  "theme_color": "#0f4c3a",
   "orientation": "portrait",
-  "categories": ["astronomy", "utilities"],
+  "categories": ["sports", "utilities"],
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -24,14 +24,16 @@
   ],
   "shortcuts": [
     {
-      "name": "Tonight",
-      "url": "/tonight",
-      "description": "View tonight's moon graph"
+      "name": "Regulations",
+      "short_name": "Regs",
+      "description": "Look up Ontario fishing regulations for your zone",
+      "url": "/regulations"
     },
     {
-      "name": "Explore",
-      "url": "/explore",
-      "description": "Explore any date"
+      "name": "Conditions",
+      "short_name": "Conditions",
+      "description": "View today's fishing conditions",
+      "url": "/conditions"
     }
   ]
 }

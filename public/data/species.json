@@ -1,0 +1,348 @@
+[
+  {
+    "id": "largemouth_bass",
+    "common_name": "Largemouth Bass",
+    "aliases": ["Largemouth", "LMB", "Bucketmouth"],
+    "icon": "/icons/species/largemouth-bass.svg",
+    "overview": "The largemouth bass is Ontario's most popular sport fish. Recognizable by the large mouth that extends past the eye and a distinct lateral line break. Thrives in warm, weedy lakes and slow rivers.",
+    "size_range": "Typical 30–50 cm, max 70 cm. Ontario record ~4 kg.",
+    "ontario_distribution": "Southern Ontario lakes and rivers. Most abundant in the Kawartha Lakes, Rideau system, Lake Erie shoreline, and Lake Simcoe.",
+    "habitat": {
+      "preferred_structure": ["Weed beds", "Lily pads", "Fallen timber", "Dock pilings", "Rocky points", "Beaver lodges"],
+      "depth_range_m": [0.5, 6],
+      "water_temp_preferred_c": [18, 28],
+      "notes": "Ambush predator. Rarely found in cold, deep water. Prefers sheltered bays with ample aquatic vegetation."
+    },
+    "feeding": {
+      "spring": "Pre-spawn fish move shallow and feed aggressively. Target staging areas near spawning flats in 16–20°C water. Best in mid-May to late June.",
+      "summer": "Peak feeding during solunar windows, dawn and dusk. Fish move to edges of weed beds and shade structures. Top water bite in calm, warm evenings.",
+      "fall": "Feeding increases before water temps drop below 15°C. Fish follow baitfish into open water then return to structure. Best September to mid-October.",
+      "winter": "Lethargic and rarely caught through ice. Deep basin edges at 6–10m. Slow, finesse presentations only."
+    },
+    "techniques": [
+      {
+        "name": "Texas-rigged soft plastic",
+        "seasons": ["spring", "summer", "fall"],
+        "description": "Weedless rigging allows fishing through thick vegetation. Creature baits and stick worms in natural colours work year-round.",
+        "best_conditions": "Overcast skies, moderate wind, stable to falling pressure"
+      },
+      {
+        "name": "Top water (poppers / frogs)",
+        "seasons": ["summer"],
+        "description": "Most effective at dawn and dusk over weed beds. Surface disturbance triggers instinctive strikes.",
+        "best_conditions": "Calm water, low light, warm nights, stable pressure"
+      },
+      {
+        "name": "Jig and trailer",
+        "seasons": ["spring", "fall"],
+        "description": "Football or flipping jig with crawfish trailer. Slow drag along bottom near structure.",
+        "best_conditions": "Clear water, slow-falling pressure, cool mornings"
+      },
+      {
+        "name": "Spinnerbait",
+        "seasons": ["spring", "summer"],
+        "description": "Effective along weed edges and around timber. Willowleaf blades in clear water, Colorado blades in stained water.",
+        "best_conditions": "Overcast, slight chop, moderate wind"
+      }
+    ]
+  },
+  {
+    "id": "smallmouth_bass",
+    "common_name": "Smallmouth Bass",
+    "aliases": ["Smallmouth", "Bronzeback", "SMB"],
+    "icon": "/icons/species/smallmouth-bass.svg",
+    "overview": "Often called the 'gamest fish that swims,' smallmouth bass are renowned for their acrobatic fights. Bronze-coloured with vertical bars. Prefer clear, cool lakes and fast rivers.",
+    "size_range": "Typical 30–45 cm, max 60 cm. Ontario record ~3 kg.",
+    "ontario_distribution": "Clear, rocky lakes across Ontario from southern shield to Georgian Bay. Abundant in the French River, Lake St. Clair, and Lake Ontario near shore.",
+    "habitat": {
+      "preferred_structure": ["Rocky points", "Shoals", "Gravel flats", "River rapids", "Boulder fields", "Drop-offs"],
+      "depth_range_m": [1, 9],
+      "water_temp_preferred_c": [16, 24],
+      "notes": "Prefers cleaner, cooler water than largemouth. Found in current in rivers. Rocky substrate is key."
+    },
+    "feeding": {
+      "spring": "Spawn on gravel in 12–18°C water, 2–5m depth. Males guard nests aggressively. Pre-spawn bite is excellent in May.",
+      "summer": "Crayfish are the primary forage on lakes. Bait schools of perch and shiners offshore. Feed heavily during solunar windows.",
+      "fall": "Outstanding fall bite as fish bulk up before ice. Target rock humps and points. Can be caught until ice-up.",
+      "winter": "Lethargic but catchable through ice on live bait near rocky structure."
+    },
+    "techniques": [
+      {
+        "name": "Tube jig",
+        "seasons": ["spring", "summer", "fall"],
+        "description": "Finesse presentation that mimics crayfish. Drag slowly along rocky bottom. Natural brown and green colours best.",
+        "best_conditions": "Clear water, sunny days, stable pressure"
+      },
+      {
+        "name": "Drop shot",
+        "seasons": ["summer", "fall"],
+        "description": "Vertical presentation for finicky fish. Use small finesse worms 10–30cm above weight. Excellent for suspended fish.",
+        "best_conditions": "Post-cold-front, high pressure, clear skies"
+      },
+      {
+        "name": "Ned rig",
+        "seasons": ["spring", "summer", "fall"],
+        "description": "Ultra-light mushroom head jig with small stick worm. Stands up on bottom and triggers neutral fish.",
+        "best_conditions": "Tough conditions, clear water, bright days"
+      },
+      {
+        "name": "Swimbait / paddle tail",
+        "seasons": ["summer", "fall"],
+        "description": "Mimics shad or cisco forage. Cast along rocky points and retrieve steadily at 1–3m depth.",
+        "best_conditions": "Low light, overcast, active baitfish visible on sonar"
+      }
+    ]
+  },
+  {
+    "id": "walleye",
+    "common_name": "Walleye",
+    "aliases": ["Walleye", "Pickerel", "Dore"],
+    "icon": "/icons/species/walleye.svg",
+    "overview": "Ontario's most sought-after table fish. Named for its light-reflecting eyes adapted for low-light feeding. Olive-gold colouring with a white-tipped lower tail fin.",
+    "size_range": "Typical 40–65 cm, max 90 cm. Ontario record ~10 kg.",
+    "ontario_distribution": "Widespread across Ontario in clear to moderately turbid lakes and rivers. Exceptional fisheries in Lake Erie, Lake Simcoe, Lake Nipissing, and the Kawartha Lakes.",
+    "habitat": {
+      "preferred_structure": ["Sandy/gravel shoals", "Weed edges", "Rocky reefs", "River current breaks", "Dam tailwaters"],
+      "depth_range_m": [2, 15],
+      "water_temp_preferred_c": [15, 22],
+      "notes": "Highly light-sensitive. Most active at dawn, dusk, and on overcast days. Moves deep on bright sunny days."
+    },
+    "feeding": {
+      "spring": "Spawn on rocky shoals in 6–8°C water in April–May. Best fishing starts when water reaches 12°C. Shallow at night, deeper in day.",
+      "summer": "Moves to thermocline depth in warm weather. Dawn/dusk pattern strongest. Overcast days produce all-day bites.",
+      "fall": "Excellent fall bite as fish feed aggressively before freeze-up. Best September to November on shallow rocky structure.",
+      "winter": "Top ice fishing species. Fish suspended over deep basins and at weed edges. Jigging in 6–12m typical."
+    },
+    "techniques": [
+      {
+        "name": "Jig and live minnow",
+        "seasons": ["spring", "summer", "fall", "winter"],
+        "description": "Walleye's most reliable presentation. 1/8–1/2 oz jig with a lively minnow. Bounced along bottom.",
+        "best_conditions": "Low light, cloudy, dawn or dusk, solunar windows"
+      },
+      {
+        "name": "Trolling with harness",
+        "seasons": ["summer", "fall"],
+        "description": "Worm harness trolled at 1–1.5 km/h along depth contours. Locates active fish over large areas.",
+        "best_conditions": "Stable or rising pressure, overcast, light wind"
+      },
+      {
+        "name": "Slip float with minnow",
+        "seasons": ["spring", "fall"],
+        "description": "Suspend minnow at precise depth near structure. Set float to keep minnow 15–30cm off bottom.",
+        "best_conditions": "Mild current, dawn feeding period, spring/fall"
+      }
+    ]
+  },
+  {
+    "id": "northern_pike",
+    "common_name": "Northern Pike",
+    "aliases": ["Pike", "Jack", "Water wolf"],
+    "icon": "/icons/species/northern-pike.svg",
+    "overview": "Apex predator of Ontario's north. Torpedo-shaped with distinctive bean-shaped light spots on a dark green body. An aggressive, year-round target species.",
+    "size_range": "Typical 55–90 cm, max 130+ cm. Ontario record ~15 kg.",
+    "ontario_distribution": "Ubiquitous throughout Ontario's lakes and rivers. Largest specimens from remote northern lakes, Lake of the Woods, and Lake Nipissing.",
+    "habitat": {
+      "preferred_structure": ["Cabbage weed", "Bulrushes", "Shallow bays", "River mouths", "Fallen trees", "Points and narrows"],
+      "depth_range_m": [0.5, 8],
+      "water_temp_preferred_c": [10, 20],
+      "notes": "Prefers cooler water than bass. Retreats deeper in summer heat. Ambush predator that waits motionless in vegetation."
+    },
+    "feeding": {
+      "spring": "Most aggressive feeding period. Fish shallow bays immediately after ice-out while water is still cold. Large pike active all day.",
+      "summer": "Retreats to deeper, cooler water in heat of day. Best fishing at dawn in emergent vegetation. Overcast days extend active periods.",
+      "fall": "Feeding intensifies as water cools. Trophy-sized fish caught in October and November. Best period for large fish.",
+      "winter": "Active through ice. Fish over submerged weed beds in 2–5m. Live and dead bait both effective."
+    },
+    "techniques": [
+      {
+        "name": "Large spinnerbait or bucktail",
+        "seasons": ["spring", "summer", "fall"],
+        "description": "Bulky presentations with strong vibration. Retrieve through weed edges. Use wire leader to prevent bite-offs.",
+        "best_conditions": "Overcast, moderate wind, stained water"
+      },
+      {
+        "name": "Sucker or ciscos (live bait)",
+        "seasons": ["spring", "fall", "winter"],
+        "description": "Large live bait under a bobber or on a set line. Most effective for trophy fish. Use large circle hook.",
+        "best_conditions": "Slow pressure days, early morning, pre-front"
+      },
+      {
+        "name": "Large surface lures",
+        "seasons": ["summer"],
+        "description": "Prop baits and glide baits retrieved over weedy bays at dawn. Spectacular surface strikes.",
+        "best_conditions": "Calm water, low light, humid mornings"
+      }
+    ]
+  },
+  {
+    "id": "muskellunge",
+    "common_name": "Muskellunge",
+    "aliases": ["Muskie", "Musky", "Muskellunge"],
+    "icon": "/icons/species/muskellunge.svg",
+    "overview": "The 'fish of ten thousand casts' — Ontario's largest freshwater predator and the most coveted freshwater trophy. Greenish with dark vertical bars or spots, massive jaws.",
+    "size_range": "Typical 80–120 cm, max 150+ cm. Ontario record ~32 kg.",
+    "ontario_distribution": "Selected lakes and rivers — not ubiquitous. Notable muskie waters include Lake St. Clair, French River, Lake of Bays, St. Lawrence River, Lac Seul, and Georgian Bay.",
+    "habitat": {
+      "preferred_structure": ["Cabbage weed flats", "Rocky reefs", "Current seams", "Points and narrows", "Transition zones (sand to rock)"],
+      "depth_range_m": [1, 12],
+      "water_temp_preferred_c": [15, 22],
+      "notes": "Solitary apex predator with large territories. 'Figure-8' at the boat — follow-through every cast as muskies often follow lures and strike boat-side."
+    },
+    "feeding": {
+      "spring": "Post-spawn recovery until mid-July. Smaller baits more effective during early season. Fish are present but not aggressive.",
+      "summer": "Peak feeding activity. Best windows are early morning, evening, and overcast days. Feeding binges last minutes — timing is critical.",
+      "fall": "Best season for trophy fish. Cold water triggers binge feeding to fatten up. October is considered peak muskie month in Ontario.",
+      "winter": "Season typically closed. Fish become very lethargic."
+    },
+    "techniques": [
+      {
+        "name": "Large glide bait / swimbait",
+        "seasons": ["summer", "fall"],
+        "description": "9–14 inch S-shaped swimbaits mimic large baitfish. Slow, wide-sweep retrieve. Premium option for trophy fish.",
+        "best_conditions": "Stable or slowly falling pressure, overcast, solunar peak"
+      },
+      {
+        "name": "Bucktail spinner",
+        "seasons": ["summer", "fall"],
+        "description": "Classic muskie presentation. Large Colorado blade with full bucktail. Steady retrieve just under the surface.",
+        "best_conditions": "Overcast with wind chop, moderate temperature, dawn and dusk"
+      },
+      {
+        "name": "Large jerkbait (Suick, Believer)",
+        "seasons": ["fall"],
+        "description": "Twitch-pause presentation for cold-water muskies. Fish hang deeper and respond to paused, dying-bait action.",
+        "best_conditions": "Water below 15°C, fall turnover, overcast days"
+      }
+    ]
+  },
+  {
+    "id": "lake_trout",
+    "common_name": "Lake Trout",
+    "aliases": ["Laker", "Lake Char", "Grey Trout"],
+    "icon": "/icons/species/lake-trout.svg",
+    "overview": "Ontario's cold-water icon. Deeply forked tail, worm-like light spots on dark grey-green body. Requires cold, well-oxygenated water. Found only in quality lakes.",
+    "size_range": "Typical 45–75 cm, max 100+ cm. Ontario record ~29 kg.",
+    "ontario_distribution": "Deep, cold, clean Canadian Shield lakes. Best fisheries: Lake Superior, Lake Huron, Georgian Bay, Temagami area, and countless remote northern lakes.",
+    "habitat": {
+      "preferred_structure": ["Deep basin edges", "Underwater points", "Thermal stratification layer (thermocline)", "Rocky reefs in spring/fall", "Open water"],
+      "depth_range_m": [10, 60],
+      "water_temp_preferred_c": [8, 14],
+      "notes": "Stays in cold water year-round. Moves shallow in spring and fall when surface temps cool. Requires dissolved oxygen — won't tolerate stratified warm-water lakes."
+    },
+    "feeding": {
+      "spring": "Best surface/shallow period immediately after ice-out. Fish rocky points and shoals in 3–6m. Highly aggressive and accessible.",
+      "summer": "Retreats to cold depths following the thermocline (typically 15–30m). Requires downriggers or deep jigging techniques.",
+      "fall": "Spawns on rocky shoals in October–November. Comes shallow again. Exceptional shallow fishing before and during spawn.",
+      "winter": "Active and accessible through ice. Fish suspended at the thermocline or over deep structure. Best January–March."
+    },
+    "techniques": [
+      {
+        "name": "Tube jig or bucktail (spring/fall)",
+        "seasons": ["spring", "fall"],
+        "description": "Cast and slow-roll along rocky structure when lakers are shallow. White, silver, and orange are effective colours.",
+        "best_conditions": "Cold water (below 12°C), early season, early morning"
+      },
+      {
+        "name": "Jigging spoon (deep summer)",
+        "seasons": ["summer"],
+        "description": "Heavy spoons jigged vertically at depth over known structure. Required when fish are 15–35m down.",
+        "best_conditions": "Stable weather, mid-day when fish are holding deep"
+      },
+      {
+        "name": "Trolling with flashers",
+        "seasons": ["summer"],
+        "description": "Cowbells or flasher-fly rig trolled at depth on a downrigger. Covers water and finds suspended fish.",
+        "best_conditions": "Clear water, sunny days when fish are deep"
+      }
+    ]
+  },
+  {
+    "id": "rainbow_trout",
+    "common_name": "Rainbow Trout (Steelhead)",
+    "aliases": ["Rainbow", "Steelhead", "Bow"],
+    "icon": "/icons/species/rainbow-trout.svg",
+    "overview": "Rainbow trout that migrate between Lake Ontario and its tributaries are called steelhead — silver sea-run fish averaging 2–5 kg. Resident lake rainbows are smaller and pink-striped.",
+    "size_range": "Lake resident: 30–50 cm. Steelhead: 50–80 cm, max 90+ cm.",
+    "ontario_distribution": "Lake Ontario tributaries (Credit, Humber, Ganaraska, Saugeen) for steelhead runs. Lake Superior and northern inland lakes for resident fish.",
+    "habitat": {
+      "preferred_structure": ["River pools", "Tailouts", "Riffles", "Lake tributary mouths", "Cold river runs"],
+      "depth_range_m": [0.3, 4],
+      "water_temp_preferred_c": [8, 18],
+      "notes": "Steelhead migrate into rivers twice yearly: fall run (October–November) and spring run (March–May). Fish most accessible in rivers."
+    },
+    "feeding": {
+      "spring": "Spring steelhead run — fish enter tributaries to spawn in March–May. Aggressive feeders on spawn sacs, nymphs, and streamers.",
+      "summer": "Resident lake fish active in cold tributary pools. Best in northern lakes and streams. Avoid warm water periods.",
+      "fall": "Fall steelhead run begins in October. Fresh-run fish are bright silver and extremely strong. Best fishing in freshets.",
+      "winter": "Steelhead can be caught in rivers through winter in southern Ontario tributaries. Slow nymphing in deep pools."
+    },
+    "techniques": [
+      {
+        "name": "Float fishing with spawn sac",
+        "seasons": ["spring", "fall"],
+        "description": "Drift spawn sacs or beads under a float at current speed through holding pools. Dominant presentation for steelhead.",
+        "best_conditions": "Rising or stable water levels, overcast, fresh-run fish"
+      },
+      {
+        "name": "Spoon or inline spinner",
+        "seasons": ["spring", "fall"],
+        "description": "Cast and retrieve through pools and tailouts. Silver and chartreuse most effective on fresh fish.",
+        "best_conditions": "Clear water, fish recently arrived in river, morning light"
+      },
+      {
+        "name": "Jig and float",
+        "seasons": ["spring", "fall", "winter"],
+        "description": "Small tube or marabou jig drifted under a float at depth. Excellent for finicky fish in clear water.",
+        "best_conditions": "High pressure post-front, clear water, slow current"
+      }
+    ]
+  },
+  {
+    "id": "brown_trout",
+    "common_name": "Brown Trout",
+    "aliases": ["Brown", "Brownie", "German Brown"],
+    "icon": "/icons/species/brown-trout.svg",
+    "overview": "Introduced from Europe, brown trout have thrived in Ontario's cold rivers and lake tributaries. Golden-brown body with black and red spots encircled in white halos. Known for being wary and selective.",
+    "size_range": "Typical 35–60 cm, max 80+ cm. Trophy fish over 5 kg exist in Lake Ontario tributaries.",
+    "ontario_distribution": "Lake Ontario tributaries (Credit, Ganaraska, Nottawasaga, Saugeen), Lake Simcoe area streams, and scattered Ontario rivers with cold-water inputs.",
+    "habitat": {
+      "preferred_structure": ["Deep pools under cut banks", "Root tangles", "Log jams", "Pool/riffle transitions", "Cold spring seeps"],
+      "depth_range_m": [0.5, 4],
+      "water_temp_preferred_c": [10, 18],
+      "notes": "Most wary of Ontario's trout species. Feeds actively at night. Prefers specific holding spots and can be patterned."
+    },
+    "feeding": {
+      "spring": "Active surface and subsurface feeding in cool spring conditions. Hatch feeding common. Excellent April–June on rivers.",
+      "summer": "Moves to cold springs and deep pools in heat. Best fishing in early morning or evening. Nocturnal surface activity.",
+      "fall": "Spawning run in October–November. Fish stage in lake near tributary mouths then move upstream. Strong, dark-coloured fall fish.",
+      "winter": "Some river fishing in southern Ontario during mild spells. Slow presentations in deep pools near bottom."
+    },
+    "techniques": [
+      {
+        "name": "Dry fly (hatch matching)",
+        "seasons": ["spring", "summer"],
+        "description": "Surface feeding during mayfly, caddis, and stonefly hatches. Precise presentation with tapered leader. Most technical presentation.",
+        "best_conditions": "Active hatch, overcast, calm water surface, evening"
+      },
+      {
+        "name": "Streamer / sculpin pattern",
+        "seasons": ["spring", "fall"],
+        "description": "Large minnow-imitating flies stripped through pools. Triggers large predatory fish. Strip fast past structure.",
+        "best_conditions": "Overcast, rising water, aggressive fish, low light"
+      },
+      {
+        "name": "Inline spinner (Mepps, Worden's)",
+        "seasons": ["spring", "fall"],
+        "description": "Small to medium spinners cast upstream and retrieved at current speed through pools and riffles.",
+        "best_conditions": "Morning, overcast, moderate current, stable pressure"
+      },
+      {
+        "name": "Wobbling spoon at night",
+        "seasons": ["summer"],
+        "description": "Brown trout feed actively at night in summer. Small wobbling spoons in silver or black retrieve slowly over known holding spots.",
+        "best_conditions": "Warm nights, low light, stable weather"
+      }
+    ]
+  }
+]

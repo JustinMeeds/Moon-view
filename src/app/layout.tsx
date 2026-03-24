@@ -6,13 +6,13 @@ import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { NightModeApplier } from "@/components/NightModeApplier";
 
 export const metadata: Metadata = {
-  title: "Moon Tracker",
-  description: "Track the Moon — position, visibility, and tonight's altitude chart.",
+  title: "CastON — Ontario Fishing Companion",
+  description: "Real-time fishing conditions, solunar windows, Ontario regulations by FMZ zone, and species info. Offline-capable PWA.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Moon Tracker",
+    title: "CastON",
   },
   other: {
     "mobile-web-app-capable": "yes",
@@ -24,7 +24,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#030712",
+  themeColor: "#0f4c3a",
   viewportFit: "cover",
 };
 

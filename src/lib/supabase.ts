@@ -19,6 +19,7 @@ export type AppPreferences = {
   useCardinal: boolean;
   nightMode: boolean;
   defaultLocationId: string | null;
+  units: "metric" | "imperial";
 };
 
 export const DEFAULT_PREFERENCES: AppPreferences = {
@@ -26,6 +27,7 @@ export const DEFAULT_PREFERENCES: AppPreferences = {
   useCardinal: true,
   nightMode: false,
   defaultLocationId: null,
+  units: "metric",
 };
 
 export type SavedLocation = {

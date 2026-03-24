@@ -1,18 +1,24 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useApp } from "@/context/AppContext";
-import { getMoonPosition, getMoonPhase, getMoonTimes } from "@/lib/moon";
-import { formatAltitude, formatTime, formatDeg, formatDateLabel } from "@/lib/utils";
-import { Compass } from "@/components/Compass";
+import { getMoonPhase, getMoonTimes } from "@/lib/moon";
+import { getSolunarWindows } from "@/lib/solunar";
+import { calculateFishingScore, getBestWindowToday } from "@/lib/score";
+import { generateReason } from "@/lib/scoreReason";
+import { getPressurePoints, getPressureTrendLabel, getPressureImplication } from "@/lib/weather";
+import { formatTime, azimuthToCardinal } from "@/lib/utils";
 import { LocationBar } from "@/components/LocationBar";
 import { NoLocation } from "@/components/NoLocation";
-import { Countdown } from "@/components/Countdown";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { FishingScore } from "@/components/FishingScore";
+import { FMZBanner } from "@/components/FMZBanner";
+import { FMZMapPicker } from "@/components/FMZMapPicker";
+import { SolunarChart } from "@/components/SolunarChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Thermometer, Wind, BarChart2, Droplets, Moon as MoonIcon, AlertCircle, RefreshCw } from "lucide-react";
 import Link from "next/link";
-import { ArrowRight, ChevronLeft, ChevronRight, Moon, Share2, Sunrise, Sunset } from "lucide-react";
+import type { SolunarWindow } from "@/lib/solunar";
+import type { ScoreResult } from "@/lib/score";
 
 function useNow() {
   const [now, setNow] = useState(() => new Date());
@@ -24,221 +30,244 @@ function useNow() {
 }
 
 export default function HomePage() {
-  const { location, preferences, requestLocation, dayOffset, setDayOffset } = useApp();
+  const {
+    location,
+    fmz,
+    fmzSource,
+    setFmz,
+    weatherData,
+    weatherLoading,
+    weatherError,
+    weatherStaleMs,
+    refreshWeather,
+    preferences,
+  } = useApp();
+
   const now = useNow();
-  const [shareFeedback, setShareFeedback] = useState(false);
+  const [fmzPickerOpen, setFmzPickerOpen] = useState(false);
+  const [solunarWindows, setSolunarWindows] = useState<SolunarWindow[]>([]);
+  const [scoreResult, setScoreResult] = useState<ScoreResult | null>(null);
+  const [bestToday, setBestToday] = useState<{ score: number; time: Date } | null>(null);
+  const [reason, setReason] = useState("");
 
+  // Recompute solunar windows whenever location or date changes
   useEffect(() => {
-    if (!location) requestLocation();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!location) return;
+    const windows = getSolunarWindows(now, location);
+    setSolunarWindows(windows);
+  }, [location, now.toDateString()]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Read ?date=YYYY-MM-DD from URL on mount and apply as dayOffset
+  // Recompute score whenever weather or solunar changes
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const dateParam = params.get("date");
-    if (dateParam) {
-      const [y, m, d] = dateParam.split("-").map(Number);
-      const target = new Date(y, m - 1, d);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      target.setHours(0, 0, 0, 0);
-      const diff = Math.round((target.getTime() - today.getTime()) / 86400000);
-      setDayOffset(diff);
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!location || !weatherData || solunarWindows.length === 0) return;
 
-  const handleShare = async () => {
-    const d = new Date();
-    d.setDate(d.getDate() + dayOffset);
-    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    const url = `${window.location.origin}/?date=${dateStr}`;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: "Moon Tracker", text: `Moon on ${dateStr}`, url });
-      } else {
-        await navigator.clipboard.writeText(url);
-        setShareFeedback(true);
-        setTimeout(() => setShareFeedback(false), 2000);
-      }
-    } catch {}
-  };
+    const moonPhase = getMoonPhase(now);
+    const pressurePoints = getPressurePoints(weatherData.hourly, now);
 
-  if (!location) return <NoLocation />;
+    if (!pressurePoints) return;
 
-  const isToday = dayOffset === 0;
+    const result = calculateFishingScore({
+      pressureNow: pressurePoints.pressureNow,
+      pressure3hAgo: pressurePoints.pressure3hAgo,
+      windKmh: weatherData.current.windKmh,
+      airTempC: weatherData.current.airTempC,
+      monthIndex: now.getMonth(),
+      solunarWindows,
+      moonFraction: moonPhase.fraction,
+      now,
+      lat: location.lat,
+    });
 
-  const displayDate = (() => {
-    if (isToday) return now;
-    const d = new Date(now);
-    d.setDate(d.getDate() + dayOffset);
-    d.setHours(12, 0, 0, 0);
-    return d;
-  })();
+    setScoreResult(result);
+    setReason(generateReason(result.factors, result.pressureTrend));
 
-  const moonPos   = getMoonPosition(displayDate, location);
-  const moonPhase = getMoonPhase(displayDate);
-  const moonTimes = getMoonTimes(displayDate, location);
+    // Best-today calculation
+    const hourlyForScore = weatherData.hourly.map((h) => ({
+      time: h.time,
+      pressureHpa: h.pressureHpa,
+      windKmh: h.windKmh,
+      airTempC: h.airTempC,
+    }));
+    const best = getBestWindowToday(hourlyForScore, solunarWindows, moonPhase.fraction, now, location.lat);
+    setBestToday(best);
+  }, [weatherData, solunarWindows, now]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const { use24h, useCardinal, nightMode } = preferences;
+  // Recalculate score every 30 min
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (location) refreshWeather();
+    }, 30 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [location, refreshWeather]);
 
-  const directionLabel = useCardinal
-    ? `${moonPos.cardinal} (${formatDeg(moonPos.azimuthDeg)})`
-    : formatDeg(moonPos.azimuthDeg);
+  if (!location) {
+    return (
+      <div className="px-4 pt-4">
+        <NoLocation />
+      </div>
+    );
+  }
 
-  const dayLabel =
-    isToday        ? "Today"
-    : dayOffset === 1  ? "Tomorrow"
-    : dayOffset === -1 ? "Yesterday"
-    : formatDateLabel(displayDate);
+  const moonPhase = getMoonPhase(now);
+  const moonTimes = getMoonTimes(now, location);
+  const pressurePoints = weatherData ? getPressurePoints(weatherData.hourly, now) : null;
+  const pressureDelta = pressurePoints
+    ? pressurePoints.pressureNow - pressurePoints.pressure3hAgo
+    : null;
 
-  const graphLabel =
-    isToday        ? "Tonight's Graph"
-    : dayOffset === 1  ? "Tomorrow's Graph"
-    : `${formatDateLabel(displayDate)} Graph`;
+  const windCardinal = weatherData
+    ? azimuthToCardinal(weatherData.current.windDirDeg)
+    : null;
+
+  // Stale warning: show if data is > 2h old
+  const showStale = weatherStaleMs !== null && weatherStaleMs > 2 * 60 * 60 * 1000;
 
   return (
-    <div className="px-4 pt-2 space-y-5">
+    <div className="px-4 pt-3 space-y-3">
+      {/* Location */}
       <LocationBar />
 
-      {/* Date navigator */}
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={() => setDayOffset(dayOffset - 1)} className="shrink-0 w-9 h-9">
-          <ChevronLeft className="w-5 h-5" />
-        </Button>
-        <div className="flex-1 text-center">
-          <p className="text-sm font-medium text-white">{dayLabel}</p>
-          <p className="text-xs text-white/40">
-            {formatDateLabel(displayDate)}{isToday ? ` · ${formatTime(now, use24h)}` : ""}
-          </p>
-        </div>
-        <Button variant="ghost" size="icon" onClick={() => setDayOffset(dayOffset + 1)} className="shrink-0 w-9 h-9">
-          <ChevronRight className="w-5 h-5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleShare}
-          title="Share this date"
-          className="shrink-0 w-9 h-9 relative"
-        >
-          {shareFeedback
-            ? <span className="text-[10px] text-indigo-400 font-semibold">✓</span>
-            : <Share2 className="w-4 h-4" />}
-        </Button>
-      </div>
+      {/* FMZ Banner */}
+      <FMZBanner
+        fmz={fmz}
+        source={fmzSource}
+        onChangeZone={() => setFmzPickerOpen(true)}
+      />
 
-      {!isToday && (
-        <button
-          onClick={() => setDayOffset(0)}
-          className="w-full text-center text-xs text-indigo-400 hover:text-indigo-300 transition-colors py-0.5 -mt-2"
-        >
-          ← Back to today
-        </button>
+      {/* Stale data warning */}
+      {showStale && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-300">
+          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+          <span className="flex-1">
+            Conditions last updated {Math.floor(weatherStaleMs! / 3600000)}h ago
+          </span>
+          <button
+            onClick={refreshWeather}
+            disabled={weatherLoading}
+            className="flex items-center gap-1 hover:text-amber-200 transition-colors"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${weatherLoading ? "animate-spin" : ""}`} />
+            Refresh
+          </button>
+        </div>
       )}
 
-      {isToday && <Countdown location={location} use24h={use24h} />}
-
-      {/* Hero readout */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="space-y-3 flex-1">
-          {isToday ? (
-            moonPos.isVisible
-              ? <Badge variant="success">Visible Now</Badge>
-              : <Badge variant="muted">Below Horizon</Badge>
+      {/* Fishing Score */}
+      <Card>
+        <CardContent className="pt-2 pb-4">
+          {scoreResult ? (
+            <FishingScore
+              score={scoreResult.total}
+              reason={reason}
+              bestToday={bestToday}
+              use24h={preferences.use24h}
+            />
+          ) : weatherLoading ? (
+            <div className="flex flex-col items-center py-6 gap-2">
+              <div className="w-16 h-16 rounded-full bg-white/5 animate-pulse" />
+              <p className="text-xs text-white/30">Loading conditions…</p>
+            </div>
           ) : (
-            <Badge variant="default">{dayOffset > 0 ? "Upcoming" : "Past"}</Badge>
+            <div className="flex flex-col items-center py-4 gap-2">
+              <p className="text-3xl">🎣</p>
+              <p className="text-sm text-white/50">Score available once conditions load</p>
+            </div>
           )}
-
-          <div className="flex items-center gap-2">
-            <span className="text-2xl leading-none">{moonPhase.emoji}</span>
-            <div>
-              <p className="text-sm text-white/70 leading-tight">{moonPhase.label}</p>
-              <p className="text-xs text-white/30">{Math.round(moonPhase.fraction * 100)}% lit</p>
-            </div>
-          </div>
-
-          <div>
-            <p className="text-[10px] text-white/40 uppercase tracking-widest">Direction</p>
-            <p className="text-2xl font-bold tracking-tight text-white leading-tight">
-              {directionLabel}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-[10px] text-white/40 uppercase tracking-widest">Altitude</p>
-            <p className={`text-2xl font-bold leading-tight ${moonPos.isVisible ? "text-white" : "text-white/40"}`}>
-              {formatAltitude(moonPos.altitudeDeg)}
-            </p>
-          </div>
-        </div>
-
-        <div className="shrink-0">
-          <Compass
-            azimuthDeg={moonPos.azimuthDeg}
-            altitudeDeg={moonPos.altitudeDeg}
-            size={168}
-            nightMode={nightMode}
-          />
-        </div>
-      </div>
-
-      {/* Moonrise / Moonset */}
-      <Card>
-        <CardHeader><CardTitle>{dayLabel}</CardTitle></CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0">
-                <Sunrise className="w-4 h-4 text-amber-400" />
-              </div>
-              <div>
-                <p className="text-[10px] text-white/40 uppercase tracking-wide">Moonrise</p>
-                <p className="text-base font-semibold text-white">
-                  {moonTimes.rise ? formatTime(moonTimes.rise, use24h) : moonTimes.alwaysUp ? "Always up" : "—"}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-indigo-500/10 flex items-center justify-center shrink-0">
-                <Sunset className="w-4 h-4 text-indigo-400" />
-              </div>
-              <div>
-                <p className="text-[10px] text-white/40 uppercase tracking-wide">Moonset</p>
-                <p className="text-base font-semibold text-white">
-                  {moonTimes.set ? formatTime(moonTimes.set, use24h) : moonTimes.alwaysDown ? "Always down" : "—"}
-                </p>
-              </div>
-            </div>
-          </div>
         </CardContent>
       </Card>
 
-      {/* Illumination */}
+      {/* Solunar Windows */}
       <Card>
-        <CardHeader><CardTitle>Illumination</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Today&apos;s Feeding Windows</CardTitle>
+        </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-white/60">{moonPhase.label}</span>
-              <span className="text-white font-semibold">{Math.round(moonPhase.fraction * 100)}%</span>
-            </div>
-            <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-indigo-500 to-amber-400 rounded-full transition-all duration-700"
-                style={{ width: `${moonPhase.fraction * 100}%` }}
-              />
-            </div>
-          </div>
+          {solunarWindows.length > 0 ? (
+            <SolunarChart windows={solunarWindows} now={now} use24h={preferences.use24h} />
+          ) : (
+            <p className="text-xs text-white/40">Calculating…</p>
+          )}
         </CardContent>
       </Card>
 
-      <Link href="/tonight">
-        <Button variant="secondary" size="lg" className="w-full">
-          <Moon className="w-5 h-5" />
-          {graphLabel}
-          <ArrowRight className="w-4 h-4 ml-auto" />
-        </Button>
-      </Link>
+      {/* Conditions Snapshot */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Conditions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {weatherData ? (
+            <div className="grid grid-cols-2 gap-3">
+              {/* Air temp */}
+              <Link href="/conditions" className="flex items-center gap-2 text-sm group">
+                <Thermometer className="w-4 h-4 text-orange-400 shrink-0" />
+                <span className="text-white/70 group-hover:text-white transition-colors">
+                  {weatherData.current.airTempC.toFixed(1)}°C
+                </span>
+              </Link>
+
+              {/* Wind */}
+              <Link href="/conditions" className="flex items-center gap-2 text-sm group">
+                <Wind className="w-4 h-4 text-sky-400 shrink-0" />
+                <span className="text-white/70 group-hover:text-white transition-colors">
+                  {Math.round(weatherData.current.windKmh)} km/h {windCardinal}
+                </span>
+              </Link>
+
+              {/* Pressure */}
+              <Link href="/conditions" className="flex items-center gap-2 text-sm group">
+                <BarChart2 className="w-4 h-4 text-violet-400 shrink-0" />
+                <span className="text-white/70 group-hover:text-white transition-colors">
+                  {pressurePoints
+                    ? `${pressurePoints.pressureNow.toFixed(0)} hPa ${pressureDelta !== null ? getPressureTrendLabel(pressureDelta).split(" ")[0] : ""}`
+                    : "—"}
+                </span>
+              </Link>
+
+              {/* Humidity */}
+              <Link href="/conditions" className="flex items-center gap-2 text-sm group">
+                <Droplets className="w-4 h-4 text-blue-400 shrink-0" />
+                <span className="text-white/70 group-hover:text-white transition-colors">
+                  {weatherData.hourly.find((h) => Math.abs(h.time - now.getTime()) < 30 * 60 * 1000)?.humidityPct ?? "—"}% humidity
+                </span>
+              </Link>
+
+              {/* Moon */}
+              <Link href="/moon" className="flex items-center gap-2 text-sm group col-span-2">
+                <MoonIcon className="w-4 h-4 text-yellow-300 shrink-0" />
+                <span className="text-white/70 group-hover:text-white transition-colors">
+                  {moonPhase.emoji} {moonPhase.label} · {Math.round(moonPhase.fraction * 100)}%
+                  {moonTimes.rise && !moonTimes.alwaysUp && (
+                    <> · rises {formatTime(moonTimes.rise, preferences.use24h)}</>
+                  )}
+                </span>
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-5 bg-white/5 rounded animate-pulse" />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Error state */}
+      {weatherError && !weatherData && (
+        <div className="flex items-center gap-2 px-3 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-300">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span className="flex-1">{weatherError}</span>
+        </div>
+      )}
+
+      {/* FMZ Picker */}
+      <FMZMapPicker
+        open={fmzPickerOpen}
+        currentFmz={fmz}
+        onSelect={(id) => { setFmz(id, "manual"); setFmzPickerOpen(false); }}
+        onClose={() => setFmzPickerOpen(false)}
+      />
     </div>
   );
 }

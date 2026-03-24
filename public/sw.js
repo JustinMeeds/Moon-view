@@ -1,107 +1,148 @@
-// Moon Tracker Service Worker
-const CACHE_NAME = "moon-tracker-v1";
+// CastON Service Worker
+const CACHE_NAME = "caston-v1";
+const OPEN_METEO_HOST = "api.open-meteo.com";
+const ECCC_HOST = "wateroffice.ec.gc.ca";
+const OPEN_METEO_TTL_MS = 30 * 60 * 1000;   // 30 min
+const ECCC_TTL_MS       = 2 * 60 * 60 * 1000; // 2 h
 
-// Shell assets to cache immediately on install
+// App shell + data files to precache on install
 const PRECACHE_URLS = [
   "/",
-  "/tonight",
-  "/explore",
-  "/settings",
+  "/moon",
+  "/conditions",
+  "/regulations",
+  "/species",
   "/manifest.json",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
+  "/data/regulations-2025.json",
+  "/data/fmz-cities.json",
+  "/data/eccc-stations.json",
+  "/data/species.json",
 ];
 
+// ── Install ────────────────────────────────────────────────────────────────────
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      // Cache what we can; ignore failures for individual assets
-      return Promise.allSettled(
-        PRECACHE_URLS.map((url) =>
-          cache.add(url).catch(() => {
-            // Non-fatal: some URLs may not exist yet
-          })
-        )
-      );
-    })
-  );
   self.skipWaiting();
-});
-
-self.addEventListener("activate", (event) => {
-  // Remove old caches
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
-      )
+    caches.open(CACHE_NAME).then((cache) =>
+      Promise.allSettled(PRECACHE_URLS.map((url) => cache.add(url)))
     )
   );
-  self.clients.claim();
 });
 
+// ── Activate ───────────────────────────────────────────────────────────────────
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+      )
+      .then(() => self.clients.claim())
+  );
+});
+
+// ── Fetch ──────────────────────────────────────────────────────────────────────
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Only handle same-origin GET requests
-  if (request.method !== "GET" || url.origin !== self.location.origin) {
+  // Skip webpack HMR
+  if (url.pathname.includes("_next/webpack-hmr")) return;
+
+  // Open-Meteo: NetworkFirst with 30-min TTL cache
+  if (url.hostname === OPEN_METEO_HOST) {
+    event.respondWith(networkFirstWithTTL(request, OPEN_METEO_TTL_MS));
     return;
   }
 
-  // Skip Next.js build-time API and hot-reload
-  if (
-    url.pathname.startsWith("/_next/webpack-hmr") ||
-    url.pathname.startsWith("/_next/static/development")
-  ) {
+  // ECCC water temp: NetworkFirst with 2h TTL cache
+  if (url.hostname === ECCC_HOST) {
+    event.respondWith(networkFirstWithTTL(request, ECCC_TTL_MS));
     return;
   }
 
-  // Network-first for HTML navigation (so updates land immediately)
-  if (request.headers.get("accept")?.includes("text/html")) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          return response;
-        })
-        .catch(() => caches.match(request))
-    );
+  // Public data files: CacheFirst (long-lived bundled data)
+  if (url.pathname.startsWith("/data/")) {
+    event.respondWith(cacheFirst(request));
     return;
   }
 
-  // Cache-first for static assets (_next/static)
+  // HTML navigation: NetworkFirst → ensures fresh pages, falls back to cache
+  if (request.mode === "navigate" || request.headers.get("accept")?.includes("text/html")) {
+    event.respondWith(networkFirst(request));
+    return;
+  }
+
+  // Next.js static (_next/static): CacheFirst → immutable hashed files
   if (url.pathname.startsWith("/_next/static")) {
-    event.respondWith(
-      caches.match(request).then(
-        (cached) =>
-          cached ||
-          fetch(request).then((response) => {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-            return response;
-          })
-      )
-    );
+    event.respondWith(cacheFirst(request));
     return;
   }
 
-  // Stale-while-revalidate for everything else
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      const networkFetch = fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          }
-          return response;
-        })
-        .catch(() => cached);
-      return cached || networkFetch;
-    })
-  );
+  // Everything else: StaleWhileRevalidate
+  event.respondWith(staleWhileRevalidate(request));
 });
+
+// ── Strategies ─────────────────────────────────────────────────────────────────
+
+async function networkFirst(request) {
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    const cached = await caches.match(request);
+    return cached ?? new Response("Offline", { status: 503 });
+  }
+}
+
+async function cacheFirst(request) {
+  const cached = await caches.match(request);
+  if (cached) return cached;
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    return new Response("Offline", { status: 503 });
+  }
+}
+
+async function staleWhileRevalidate(request) {
+  const cache = await caches.open(CACHE_NAME);
+  const cached = await cache.match(request);
+  const fetchPromise = fetch(request).then((response) => {
+    if (response.ok) cache.put(request, response.clone());
+    return response;
+  }).catch(() => null);
+  return cached ?? (await fetchPromise) ?? new Response("Offline", { status: 503 });
+}
+
+async function networkFirstWithTTL(request, ttlMs) {
+  const cache = await caches.open(CACHE_NAME);
+  const cached = await cache.match(request);
+
+  if (cached) {
+    const dateHeader = cached.headers.get("date");
+    if (dateHeader) {
+      const cachedAge = Date.now() - new Date(dateHeader).getTime();
+      if (cachedAge < ttlMs) return cached;
+    }
+  }
+
+  try {
+    const response = await fetch(request);
+    if (response.ok) cache.put(request, response.clone());
+    return response;
+  } catch {
+    return cached ?? new Response("Offline", { status: 503 });
+  }
+}
