@@ -1,0 +1,37 @@
+{
+  "name": "Moon Tracker",
+  "short_name": "Moon",
+  "description": "Track the Moon — position, visibility, and tonight's altitude chart.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#030712",
+  "theme_color": "#030712",
+  "orientation": "portrait",
+  "categories": ["astronomy", "utilities"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Tonight",
+      "url": "/tonight",
+      "description": "View tonight's moon graph"
+    },
+    {
+      "name": "Explore",
+      "url": "/explore",
+      "description": "Explore any date"
+    }
+  ]
+}
