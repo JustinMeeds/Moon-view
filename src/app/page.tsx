@@ -5,6 +5,7 @@ import { useApp } from "@/context/AppContext";
 import { getMoonPosition, getMoonPhase, getMoonTimes } from "@/lib/moon";
 import { formatAltitude, formatTime, formatDeg, formatDateLabel } from "@/lib/utils";
 import { Compass } from "@/components/Compass";
+import { useDeviceOrientation } from "@/hooks/useDeviceOrientation";
 import { LocationBar } from "@/components/LocationBar";
 import { NoLocation } from "@/components/NoLocation";
 import { Countdown } from "@/components/Countdown";
@@ -27,6 +28,7 @@ export default function HomePage() {
   const { location, preferences, requestLocation, dayOffset, setDayOffset } = useApp();
   const now = useNow();
   const [shareFeedback, setShareFeedback] = useState(false);
+  const { heading, permission: compassPermission, requestPermission } = useDeviceOrientation();
 
   useEffect(() => {
     if (!location) requestLocation();
@@ -172,13 +174,25 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="shrink-0">
+        <div className="shrink-0 flex flex-col items-center gap-1.5">
           <Compass
             azimuthDeg={moonPos.azimuthDeg}
             altitudeDeg={moonPos.altitudeDeg}
+            headingDeg={heading}
             size={168}
             nightMode={nightMode}
           />
+          {compassPermission === "prompt" && (
+            <button
+              onClick={requestPermission}
+              className="text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors underline underline-offset-2"
+            >
+              Enable live compass
+            </button>
+          )}
+          {compassPermission === "denied" && (
+            <p className="text-[10px] text-white/30">Compass denied</p>
+          )}
         </div>
       </div>
 
@@ -204,7 +218,7 @@ export default function HomePage() {
               </div>
               <div>
                 <p className="text-[10px] text-white/40 uppercase tracking-wide">Moonset</p>
-                <p className="text-base font-semibold text-white">
+                <p className="text-base font-semibond text-white">
                   {moonTimes.set ? formatTime(moonTimes.set, use24h) : moonTimes.alwaysDown ? "Always down" : "—"}
                 </p>
               </div>

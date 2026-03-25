@@ -5,13 +5,15 @@ import React from "react";
 interface CompassProps {
   azimuthDeg: number;
   altitudeDeg: number;
+  headingDeg?: number | null; // live device heading; when provided, rose rotates
   size?: number;
   nightMode?: boolean;
 }
 
-export function Compass({ azimuthDeg, altitudeDeg, size = 180, nightMode = false }: CompassProps) {
+export function Compass({ azimuthDeg, altitudeDeg, headingDeg, size = 180, nightMode = false }: CompassProps) {
   const center = size / 2;
   const radius = center - 16;
+  const liveCompass = headingDeg != null;
 
   // Colors
   const ring      = nightMode ? "rgba(200,0,0,0.2)"   : "rgba(255,255,255,0.12)";
@@ -34,10 +36,11 @@ export function Compass({ azimuthDeg, altitudeDeg, size = 180, nightMode = false
   const moonStroke  = nightMode
     ? (moonVisible ? "rgba(255,70,0,0.75)"  : "rgba(150,0,0,0.25)")
     : (moonVisible ? "rgba(253,224,71,0.7)" : "rgba(255,255,255,0.2)");
+  const facingColor = nightMode ? "rgba(255,80,0,0.9)" : "rgba(251,191,36,0.9)";
 
-  const angleRad  = ((azimuthDeg - 90) * Math.PI) / 180;
-  const moonX     = center + radius * 0.72 * Math.cos(angleRad);
-  const moonY     = center + radius * 0.72 * Math.sin(angleRad);
+  const angleRad   = ((azimuthDeg - 90) * Math.PI) / 180;
+  const moonX      = center + radius * 0.72 * Math.cos(angleRad);
+  const moonY      = center + radius * 0.72 * Math.sin(angleRad);
   const needleTipX = center + (radius - 12) * Math.cos(angleRad);
   const needleTipY = center + (radius - 12) * Math.sin(angleRad);
 
@@ -48,6 +51,11 @@ export function Compass({ azimuthDeg, altitudeDeg, size = 180, nightMode = false
     { label: "W", angle: 180 },
   ];
 
+  // Facing-indicator triangle: fixed at 12 o'clock, points inward
+  const triTipY  = center - radius + 3;
+  const triBaseY = center - radius - 9;
+  const triHalf  = 5;
+
   return (
     <svg
       width={size}
@@ -56,51 +64,70 @@ export function Compass({ azimuthDeg, altitudeDeg, size = 180, nightMode = false
       className="select-none"
       aria-label={`Compass showing moon at ${azimuthDeg.toFixed(0)}°`}
     >
-      <circle cx={center} cy={center} r={radius} fill="none" stroke={ring} strokeWidth="1.5" />
-      <circle cx={center} cy={center} r={radius * 0.55} fill="none" stroke={ringInner} strokeWidth="1" />
+      {/* Rose + moon — rotates together so moon stays locked to its azimuth on the compass */}
+      <g
+        style={{
+          transformOrigin: `${center}px ${center}px`,
+          transform: liveCompass ? `rotate(${-headingDeg!}deg)` : undefined,
+          transition: liveCompass ? "transform 0.12s ease-out" : undefined,
+        }}
+      >
+        <circle cx={center} cy={center} r={radius} fill="none" stroke={ring} strokeWidth="1.5" />
+        <circle cx={center} cy={center} r={radius * 0.55} fill="none" stroke={ringInner} strokeWidth="1" />
 
-      {Array.from({ length: 16 }).map((_, i) => {
-        const a = ((i * 22.5 - 90) * Math.PI) / 180;
-        const isCardinal = i % 4 === 0;
-        const inner = isCardinal ? radius - 10 : radius - 6;
-        return (
-          <line
-            key={i}
-            x1={center + radius * Math.cos(a)} y1={center + radius * Math.sin(a)}
-            x2={center + inner * Math.cos(a)}  y2={center + inner * Math.sin(a)}
-            stroke={isCardinal ? tickMaj : tickMin}
-            strokeWidth={isCardinal ? 1.5 : 1}
-          />
-        );
-      })}
+        {Array.from({ length: 16 }).map((_, i) => {
+          const a = ((i * 22.5 - 90) * Math.PI) / 180;
+          const isCardinal = i % 4 === 0;
+          const inner = isCardinal ? radius - 10 : radius - 6;
+          return (
+            <line
+              key={i}
+              x1={center + radius * Math.cos(a)} y1={center + radius * Math.sin(a)}
+              x2={center + inner * Math.cos(a)}  y2={center + inner * Math.sin(a)}
+              stroke={isCardinal ? tickMaj : tickMin}
+              strokeWidth={isCardinal ? 1.5 : 1}
+            />
+          );
+        })}
 
-      {cardinals.map(({ label, angle }) => {
-        const a = (angle * Math.PI) / 180;
-        return (
-          <text
-            key={label}
-            x={center + (radius + 11) * Math.cos(a)}
-            y={center + (radius + 11) * Math.sin(a)}
-            textAnchor="middle"
-            dominantBaseline="central"
-            fontSize={label === "N" ? 11 : 10}
-            fontWeight={label === "N" ? "700" : "500"}
-            fill={label === "N" ? labelN : labelCard}
-            fontFamily="system-ui, sans-serif"
-          >
-            {label}
-          </text>
-        );
-      })}
+        {cardinals.map(({ label, angle }) => {
+          const a = (angle * Math.PI) / 180;
+          return (
+            <text
+              key={label}
+              x={center + (radius + 11) * Math.cos(a)}
+              y={center + (radius + 11) * Math.sin(a)}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize={label === "N" ? 11 : 10}
+              fontWeight={label === "N" ? "700" : "500"}
+              fill={label === "N" ? labelN : labelCard}
+              fontFamily="system-ui, sans-serif"
+            >
+              {label}
+            </text>
+          );
+        })}
 
-      <line x1={center} y1={center} x2={needleTipX} y2={needleTipY}
-        stroke={needle} strokeWidth="1.5" strokeDasharray="3 3" />
+        {/* Moon indicator — rotates with the rose, locked to moon's azimuth */}
+        <line x1={center} y1={center} x2={needleTipX} y2={needleTipY}
+          stroke={needle} strokeWidth="1.5" strokeDasharray="3 3" />
+        <circle cx={moonX} cy={moonY} r={11} fill={moonFill} stroke={moonStroke} strokeWidth="1.5" />
+        <text x={moonX} y={moonY} textAnchor="middle" dominantBaseline="central" fontSize={13}>
+          {moonVisible ? "🌕" : "🌑"}
+        </text>
+      </g>
+
+      {/* Center dot — always on top */}
       <circle cx={center} cy={center} r={3} fill={centerDot} />
 
-      <circle cx={moonX} cy={moonY} r={11} fill={moonFill} stroke={moonStroke} strokeWidth="1.5" />
-      <text x={moonX} y={moonY} textAnchor="middle" dominantBaseline="central" fontSize={13}>
-        {moonVisible ? "🌕" : "🌑"}
-      </text>
+      {/* Facing indicator — small triangle at 12 o'clock, only shown when live heading is active */}
+      {liveCompass && (
+        <polygon
+          points={`${center},${triTipY} ${center - triHalf},${triBaseY} ${center + triHalf},${triBaseY}`}
+          fill={facingColor}
+        />
+      )}
     </svg>
   );
 }
