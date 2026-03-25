@@ -14,6 +14,10 @@ import { FishingScore } from "@/components/FishingScore";
 import { FMZBanner } from "@/components/FMZBanner";
 import { FMZMapPicker } from "@/components/FMZMapPicker";
 import { SolunarChart } from "@/components/SolunarChart";
+import { ScoreBreakdown } from "@/components/ScoreBreakdown";
+import { DayTimeline } from "@/components/DayTimeline";
+import { WeekOutlook } from "@/components/WeekOutlook";
+import { getDailyOutlook, type DayOutlook } from "@/lib/outlook";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Thermometer, Wind, BarChart2, Droplets, Moon as MoonIcon, AlertCircle, RefreshCw } from "lucide-react";
 import Link from "next/link";
@@ -41,6 +45,7 @@ export default function HomePage() {
     weatherStaleMs,
     refreshWeather,
     preferences,
+    setDayOffset,
   } = useApp();
 
   const now = useNow();
@@ -49,6 +54,8 @@ export default function HomePage() {
   const [scoreResult, setScoreResult] = useState<ScoreResult | null>(null);
   const [bestToday, setBestToday] = useState<{ score: number; time: Date } | null>(null);
   const [reason, setReason] = useState("");
+  const [hourScores, setHourScores] = useState<{ time: Date; score: number }[]>([]);
+  const [dailyOutlook, setDailyOutlook] = useState<DayOutlook[]>([]);
 
   // Recompute solunar windows whenever location or date changes
   useEffect(() => {
@@ -81,7 +88,7 @@ export default function HomePage() {
     setScoreResult(result);
     setReason(generateReason(result.factors, result.pressureTrend));
 
-    // Best-today calculation
+    // Best-today calculation + hourly score array for DayTimeline
     const hourlyForScore = weatherData.hourly.map((h) => ({
       time: h.time,
       pressureHpa: h.pressureHpa,
@@ -90,6 +97,36 @@ export default function HomePage() {
     }));
     const best = getBestWindowToday(hourlyForScore, solunarWindows, moonPhase.fraction, now, location.lat);
     setBestToday(best);
+
+    // Build hourly scores for today 5AM–10PM
+    const todayStart = new Date(now);
+    todayStart.setHours(5, 0, 0, 0);
+    const todayEnd = new Date(now);
+    todayEnd.setHours(22, 0, 0, 0);
+    const todayHourly = weatherData.hourly.filter(
+      (h) => h.time >= todayStart.getTime() && h.time <= todayEnd.getTime()
+    );
+    const scores = todayHourly.map((h) => {
+      const idx = weatherData.hourly.indexOf(h);
+      const prev3 = idx >= 3 ? weatherData.hourly[idx - 3].pressureHpa : h.pressureHpa;
+      const r = calculateFishingScore({
+        pressureNow: h.pressureHpa,
+        pressure3hAgo: prev3,
+        windKmh: h.windKmh,
+        airTempC: h.airTempC,
+        monthIndex: now.getMonth(),
+        solunarWindows,
+        moonFraction: moonPhase.fraction,
+        now: new Date(h.time),
+        lat: location.lat,
+      });
+      return { time: new Date(h.time), score: r.total };
+    });
+    setHourScores(scores);
+
+    // Build 7-day outlook
+    const outlook = getDailyOutlook(weatherData.hourly, location, now);
+    setDailyOutlook(outlook);
   }, [weatherData, solunarWindows, now]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Recalculate score every 30 min
@@ -156,12 +193,23 @@ export default function HomePage() {
       <Card>
         <CardContent className="pt-2 pb-4">
           {scoreResult ? (
-            <FishingScore
-              score={scoreResult.total}
-              reason={reason}
-              bestToday={bestToday}
-              use24h={preferences.use24h}
-            />
+            <>
+              <FishingScore
+                score={scoreResult.total}
+                reason={reason}
+                bestToday={bestToday}
+                use24h={preferences.use24h}
+              />
+              <ScoreBreakdown
+                factors={scoreResult.factors}
+                pressureTrend={scoreResult.pressureTrend}
+                windKmh={weatherData!.current.windKmh}
+                airTempC={weatherData!.current.airTempC}
+                moonFraction={getMoonPhase(now).fraction}
+                solunarWindows={solunarWindows}
+                now={now}
+              />
+            </>
           ) : weatherLoading ? (
             <div className="flex flex-col items-center py-6 gap-2">
               <div className="w-16 h-16 rounded-full bg-white/5 animate-pulse" />
@@ -189,6 +237,20 @@ export default function HomePage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Hourly Day Timeline */}
+      {hourScores.length > 0 && (
+        <Card>
+          <CardContent className="pt-4 pb-3">
+            <DayTimeline
+              hourScores={hourScores}
+              solunarWindows={solunarWindows}
+              now={now}
+              use24h={preferences.use24h}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Conditions Snapshot */}
       <Card>
@@ -252,6 +314,19 @@ export default function HomePage() {
           )}
         </CardContent>
       </Card>
+
+      {/* 7-Day Outlook */}
+      {dailyOutlook.length > 0 && (
+        <Card>
+          <CardContent className="pt-4 pb-4">
+            <WeekOutlook
+              days={dailyOutlook}
+              use24h={preferences.use24h}
+              onDaySelect={(offset) => setDayOffset(offset)}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Error state */}
       {weatherError && !weatherData && (

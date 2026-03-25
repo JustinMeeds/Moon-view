@@ -31,7 +31,7 @@ export interface CurrentWeather {
 
 export interface WeatherData {
   current: CurrentWeather;
-  /** 48h of hourly data (past 24h + next 24h), used for pressure trend + sparkline */
+  /** ~192h of hourly data (past 24h + next 7 days), used for pressure trend, sparkline, and weekly outlook */
   hourly: HourlyPoint[];
   fetchedAt: number;
   lat: number;
@@ -76,7 +76,7 @@ export async function fetchWeather(lat: number, lon: number): Promise<WeatherDat
       "weathercode",
     ].join(","),
     current_weather: "true",
-    forecast_days: "2",
+    forecast_days: "7",
     timezone: "auto",
   });
 

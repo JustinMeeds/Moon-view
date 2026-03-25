@@ -140,6 +140,21 @@ export default function SpeciesDetailPage({ params }: { params: { id: string } }
               <span className={`font-semibold uppercase text-[10px] tracking-wider ${s === season ? "text-emerald-400" : "text-white/30"}`}>
                 {s === season ? `▶ ${s}` : s}
               </span>
+              {s === season && waterTempC !== null && (
+                <span className={`ml-2 text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                  waterTempC >= optLow && waterTempC <= optHigh
+                    ? "bg-emerald-500/20 text-emerald-400"
+                    : waterTempC < optLow
+                    ? "bg-blue-500/20 text-blue-400"
+                    : "bg-amber-500/20 text-amber-400"
+                }`}>
+                  {waterTempC >= optLow && waterTempC <= optHigh
+                    ? `~${waterTempC.toFixed(0)}°C — optimal range`
+                    : waterTempC < optLow
+                    ? `~${waterTempC.toFixed(0)}°C — below optimal, fish deeper & slower`
+                    : `~${waterTempC.toFixed(0)}°C — above optimal, fish seek cooler depth`}
+                </span>
+              )}
               <p className="mt-0.5">{species.feeding[s]}</p>
             </div>
           ))}

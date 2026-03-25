@@ -41,6 +41,22 @@ export default function RegulationsPage() {
         setRegulationsCache(data);
         setRegulationsVersion(data.version);
       } catch {}
+
+      // Background: check remote Supabase Storage for a newer version
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      if (!supabaseUrl) return;
+      const remoteUrl = `${supabaseUrl}/storage/v1/object/public/data/regulations.json`;
+      try {
+        const remoteRes = await fetch(remoteUrl);
+        if (!remoteRes.ok) return;
+        const remoteData: RegulationsData = await remoteRes.json();
+        const cachedVersion = await getRegulationsVersion();
+        if (remoteData.version !== cachedVersion) {
+          setRegs(remoteData);
+          setRegulationsCache(remoteData);
+          setRegulationsVersion(remoteData.version);
+        }
+      } catch {}
     }
     load();
   }, []);

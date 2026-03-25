@@ -38,7 +38,7 @@ export const FMZ_LIST: FMZEntry[] = [
   { id: 13, name: "FMZ 13", label: "Muskoka / Algonquin" },
   { id: 14, name: "FMZ 14", label: "Georgian Bay" },
   { id: 15, name: "FMZ 15", label: "Kawartha Lakes" },
-  { id: 16, name: "FMZ 16", label: "Lake Erie (north shore)" },
+  { id: 16, name: "FMZ 16", label: "Lake Erie / Lake St. Clair" },
   { id: 17, name: "FMZ 17", label: "Lake Ontario / Lake Simcoe" },
   { id: 18, name: "FMZ 18", label: "Upper St. Lawrence" },
   { id: 19, name: "FMZ 19", label: "Lake Nipissing" },
