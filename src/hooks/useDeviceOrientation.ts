@@ -18,10 +18,9 @@ export function useDeviceOrientation(): DeviceOrientationResult {
   const listeningRef = useRef(false);
 
   const handleOrientation = useCallback((e: DeviceOrientationEvent) => {
-    // beta: 0 = flat screen-up, 90 = phone upright (horizon), 180 = flat screen-down (zenith)
-    // elevation from horizontal: 0° when phone is upright, 90° when tilted all the way back
+    // beta: 0 = phone flat/horizontal, 90 = phone pointing straight up (zenith)
     if (e.beta != null) {
-      setTiltDeg(Math.max(-90, Math.min(90, e.beta - 90)));
+      setTiltDeg(Math.max(-90, Math.min(90, e.beta)));
     }
 
     // iOS provides webkitCompassHeading: 0 = North, increases clockwise — most reliable
