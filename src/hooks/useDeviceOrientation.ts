@@ -6,16 +6,24 @@ export type CompassPermission = "prompt" | "granted" | "denied" | "unsupported";
 
 export interface DeviceOrientationResult {
   heading: number | null; // 0–360, 0 = North, clockwise
+  tiltDeg: number | null; // elevation angle: 0 = horizon, 90 = zenith (phone upright → tilted back)
   permission: CompassPermission;
   requestPermission: () => Promise<void>;
 }
 
 export function useDeviceOrientation(): DeviceOrientationResult {
   const [heading, setHeading] = useState<number | null>(null);
+  const [tiltDeg, setTiltDeg] = useState<number | null>(null);
   const [permission, setPermission] = useState<CompassPermission>("prompt");
   const listeningRef = useRef(false);
 
   const handleOrientation = useCallback((e: DeviceOrientationEvent) => {
+    // beta: 0 = flat screen-up, 90 = phone upright (horizon), 180 = flat screen-down (zenith)
+    // elevation from horizontal: 0° when phone is upright, 90° when tilted all the way back
+    if (e.beta != null) {
+      setTiltDeg(Math.max(-90, Math.min(90, e.beta - 90)));
+    }
+
     // iOS provides webkitCompassHeading: 0 = North, increases clockwise — most reliable
     const ios = (e as DeviceOrientationEvent & { webkitCompassHeading?: number }).webkitCompassHeading;
     if (typeof ios === "number" && !isNaN(ios)) {
@@ -77,5 +85,5 @@ export function useDeviceOrientation(): DeviceOrientationResult {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { heading, permission, requestPermission };
+  return { heading, tiltDeg, permission, requestPermission };
 }

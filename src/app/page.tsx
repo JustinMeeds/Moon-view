@@ -5,6 +5,7 @@ import { useApp } from "@/context/AppContext";
 import { getMoonPosition, getMoonPhase, getMoonTimes } from "@/lib/moon";
 import { formatAltitude, formatTime, formatDeg, formatDateLabel } from "@/lib/utils";
 import { Compass } from "@/components/Compass";
+import { ElevationArc } from "@/components/ElevationArc";
 import { useDeviceOrientation } from "@/hooks/useDeviceOrientation";
 import { LocationBar } from "@/components/LocationBar";
 import { NoLocation } from "@/components/NoLocation";
@@ -28,7 +29,7 @@ export default function HomePage() {
   const { location, preferences, requestLocation, dayOffset, setDayOffset } = useApp();
   const now = useNow();
   const [shareFeedback, setShareFeedback] = useState(false);
-  const { heading, permission: compassPermission, requestPermission } = useDeviceOrientation();
+  const { heading, tiltDeg, permission: compassPermission, requestPermission } = useDeviceOrientation();
 
   useEffect(() => {
     if (!location) requestLocation();
@@ -171,6 +172,15 @@ export default function HomePage() {
             <p className={`text-2xl font-bold leading-tight ${moonPos.isVisible ? "text-white" : "text-white/40"}`}>
               {formatAltitude(moonPos.altitudeDeg)}
             </p>
+            {tiltDeg != null && (
+              <div className="mt-1.5">
+                <ElevationArc
+                  moonAltitudeDeg={moonPos.altitudeDeg}
+                  tiltDeg={tiltDeg}
+                  nightMode={nightMode}
+                />
+              </div>
+            )}
           </div>
         </div>
 
