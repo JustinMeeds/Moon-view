@@ -97,7 +97,7 @@ function buildConjunction(
   const altDeg = (moonPos.altitude * 180) / Math.PI;
   const azDeg = (((moonPos.azimuth * 180) / Math.PI) + 180 + 360) % 360;
 
-  const sunPos = SunCalc.getSunPosition(time, loc.lat, loc.lng);
+  const sunPos = SunCalc.getPosition(time, loc.lat, loc.lng);
   const sunAltDeg = (sunPos.altitude * 180) / Math.PI;
 
   return {
