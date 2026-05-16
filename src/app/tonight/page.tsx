@@ -13,6 +13,10 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Sunrise, Sunset, TrendingUp } from "lucide-react";
 import { Countdown } from "@/components/Countdown";
 import { useDeviceOrientation } from "@/hooks/useDeviceOrientation";
+import { getSkyEvents } from "@/lib/sun";
+import { getUpcomingConjunctions } from "@/lib/planets";
+import { SkyEventsCard } from "@/components/SkyEventsCard";
+import { ConjunctionsCard } from "@/components/ConjunctionsCard";
 
 export default function TonightPage() {
   const { location, preferences, dayOffset, setDayOffset } = useApp();
@@ -34,6 +38,16 @@ export default function TonightPage() {
     if (!location) return null;
     return buildNightChart(baseDate, location);
   }, [location, baseDate]);
+
+  const skyEvents = useMemo(
+    () => (location ? getSkyEvents(baseDate, location) : []),
+    [location, baseDate]
+  );
+
+  const conjunctions = useMemo(
+    () => (location ? getUpcomingConjunctions(baseDate, 30, location) : []),
+    [location, baseDate]
+  );
 
   const handleScrub = useCallback((point: ChartPoint) => setActivePoint(point), []);
 
@@ -60,7 +74,7 @@ export default function TonightPage() {
         </Button>
         <div className="flex-1 text-center">
           <h1 className="text-lg font-bold text-white">{dayLabel}</h1>
-          <p className="text-xs text-white/40">{formatDateLabel(baseDate)} · 6 PM → 6 AM</p>
+          <p className="text-xs text-white/40">{formatDateLabel(baseDate)} · 24-hour view</p>
         </div>
         <Button variant="ghost" size="icon" onClick={() => shiftDay(1)} className="shrink-0 w-9 h-9">
           <ChevronRight className="w-5 h-5" />
@@ -230,6 +244,15 @@ export default function TonightPage() {
           </div>
         </CardContent>
       </Card>
+
+      <SkyEventsCard events={skyEvents} use24h={use24h} nightMode={nightMode} />
+
+      <ConjunctionsCard
+        conjunctions={conjunctions}
+        use24h={use24h}
+        nightMode={nightMode}
+        withinDays={14}
+      />
     </div>
   );
 }

@@ -12,6 +12,7 @@ export interface MoonPosition {
   azimuthDeg: number;
   cardinal: string;
   isVisible: boolean;
+  distanceKm: number;
 }
 
 export interface MoonPhase {
@@ -68,6 +69,7 @@ export function getMoonPosition(date: Date, loc: Location): MoonPosition {
     azimuthDeg,
     cardinal: azimuthToCardinal(azimuthDeg),
     isVisible: altitudeDeg > 0,
+    distanceKm: pos.distance,
   };
 }
 
@@ -103,6 +105,110 @@ export function getMoonTimes(date: Date, loc: Location): MoonTimes {
     alwaysUp: !!(times as { alwaysUp?: boolean }).alwaysUp,
     alwaysDown: !!(times as { alwaysDown?: boolean }).alwaysDown,
   };
+}
+
+// ─── Lunar distance ──────────────────────────────────────────────────────────
+
+const MOON_MIN_KM = 356_500;
+const MOON_MAX_KM = 406_700;
+const SUPERMOON_KM = 362_000;
+
+export interface LunarDistance {
+  distanceKm: number;
+  percentClose: number;    // 0 = apogee, 100 = perigee
+  isSupermoon: boolean;
+  nextPerigee: Date | null;
+  nextPerigeeKm: number | null;
+}
+
+export function getLunarDistance(date: Date, loc: Location): LunarDistance {
+  const pos = getMoonPosition(date, loc);
+  const pct = Math.round(
+    Math.max(0, Math.min(100, ((MOON_MAX_KM - pos.distanceKm) / (MOON_MAX_KM - MOON_MIN_KM)) * 100))
+  );
+  const phase = getMoonPhase(date);
+  const isSupermoon = pos.distanceKm < SUPERMOON_KM && phase.fraction > 0.85;
+  const next = findNextPerigee(date, loc);
+  return {
+    distanceKm: Math.round(pos.distanceKm),
+    percentClose: pct,
+    isSupermoon,
+    nextPerigee: next?.date ?? null,
+    nextPerigeeKm: next ? Math.round(next.distanceKm) : null,
+  };
+}
+
+function findNextPerigee(
+  from: Date,
+  loc: Location
+): { date: Date; distanceKm: number } | null {
+  // Scan hourly for 35 days; look for distance minimum (local minima)
+  const STEP_MS = 3_600_000;
+  const MAX_STEPS = 35 * 24;
+  let prevDist = getMoonPosition(from, loc).distanceKm;
+  let wasDecreasing = false;
+
+  for (let i = 1; i <= MAX_STEPS; i++) {
+    const t = new Date(from.getTime() + i * STEP_MS);
+    const dist = getMoonPosition(t, loc).distanceKm;
+    if (wasDecreasing && dist > prevDist) {
+      // Just passed minimum — step back to previous hour
+      const perigeeTime = new Date(t.getTime() - STEP_MS);
+      return { date: perigeeTime, distanceKm: prevDist };
+    }
+    wasDecreasing = dist < prevDist;
+    prevDist = dist;
+  }
+  return null;
+}
+
+// ─── Azimuth finder ──────────────────────────────────────────────────────────
+
+export interface AzimuthMatch {
+  date: Date;
+  time: Date;
+  type: "rise" | "set";
+  azimuthDeg: number;
+  deltaDeg: number;
+}
+
+export function findDatesForAzimuth(
+  targetAz: number,
+  from: Date,
+  days: number,
+  loc: Location,
+  toleranceDeg = 4
+): AzimuthMatch[] {
+  const results: AzimuthMatch[] = [];
+  for (let i = 0; i < days; i++) {
+    const day = new Date(from);
+    day.setDate(day.getDate() + i);
+    day.setHours(12, 0, 0, 0);
+
+    const times = getMoonTimes(day, loc);
+
+    const check = (t: Date | null, type: "rise" | "set") => {
+      if (!t) return;
+      const pos = getMoonPosition(t, loc);
+      const delta = Math.min(
+        Math.abs(pos.azimuthDeg - targetAz),
+        360 - Math.abs(pos.azimuthDeg - targetAz)
+      );
+      if (delta <= toleranceDeg) {
+        results.push({
+          date: new Date(t.toDateString()),
+          time: t,
+          type,
+          azimuthDeg: Math.round(pos.azimuthDeg * 10) / 10,
+          deltaDeg: Math.round(delta * 10) / 10,
+        });
+      }
+    };
+
+    check(times.rise, "rise");
+    check(times.set, "set");
+  }
+  return results;
 }
 
 /** Build chart data for a full 24-hour day: midnight → midnight (15-min steps) */

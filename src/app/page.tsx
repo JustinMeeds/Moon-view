@@ -2,7 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import { useApp } from "@/context/AppContext";
-import { getMoonPosition, getMoonPhase, getMoonTimes } from "@/lib/moon";
+import { getMoonPosition, getMoonPhase, getMoonTimes, getLunarDistance } from "@/lib/moon";
+import { getSkyEvents } from "@/lib/sun";
+import { getUpcomingConjunctions, PLANET_META } from "@/lib/planets";
 import { formatAltitude, formatTime, formatDeg, formatDateLabel } from "@/lib/utils";
 import { Compass } from "@/components/Compass";
 import { ElevationArc } from "@/components/ElevationArc";
@@ -14,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { ArrowRight, ChevronLeft, ChevronRight, Moon, Share2, Sunrise, Sunset } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Moon, Share2, Sunrise, Sunset, Sparkles } from "lucide-react";
 
 function useNow() {
   const [now, setNow] = useState(() => new Date());
@@ -81,6 +83,12 @@ export default function HomePage() {
   const moonPos   = getMoonPosition(displayDate, location);
   const moonPhase = getMoonPhase(displayDate);
   const moonTimes = getMoonTimes(displayDate, location);
+
+  // Events data — only compute for today to keep home page fast
+  const lunarDist  = isToday ? getLunarDistance(now, location) : null;
+  const skyEvents  = isToday ? getSkyEvents(now, location) : [];
+  const conjunctions = isToday ? getUpcomingConjunctions(now, 14, location) : [];
+  const nextConj   = conjunctions[0] ?? null;
 
   const { use24h, useCardinal, nightMode } = preferences;
 
@@ -172,6 +180,12 @@ export default function HomePage() {
             <p className={`text-2xl font-bold leading-tight ${moonPos.isVisible ? "text-white" : "text-white/40"}`}>
               {formatAltitude(moonPos.altitudeDeg)}
             </p>
+            {lunarDist && (
+              <p className="text-[10px] text-white/30 mt-0.5">
+                {lunarDist.distanceKm.toLocaleString()} km · {lunarDist.percentClose}% close
+                {lunarDist.isSupermoon && <span className="text-amber-400 ml-1">· Supermoon</span>}
+              </p>
+            )}
             {tiltDeg != null && (
               <div className="mt-1.5">
                 <ElevationArc
@@ -236,6 +250,40 @@ export default function HomePage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Coming Up — next conjunction or sky event, today only */}
+      {isToday && (nextConj || skyEvents.length > 0) && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle>Coming Up</CardTitle>
+            <Link href="/events" className="text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1">
+              See all <ArrowRight className="w-3 h-3" />
+            </Link>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {nextConj && (() => {
+              const meta = PLANET_META[nextConj.planet];
+              const daysAway = Math.round((nextConj.date.getTime() - now.getTime()) / 86_400_000);
+              return (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className={`text-base ${meta.color}`}>{meta.symbol}</span>
+                  <span className="text-white">Moon near {nextConj.planet}</span>
+                  <span className="text-white/40 ml-auto">
+                    {daysAway === 0 ? "Today" : daysAway === 1 ? "Tomorrow" : `in ${daysAway}d`}
+                  </span>
+                </div>
+              );
+            })()}
+            {skyEvents[0] && (
+              <div className="flex items-center gap-2 text-sm">
+                <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                <span className="text-white">{skyEvents[0].label}</span>
+                <span className="text-white/40 ml-auto">{formatTime(skyEvents[0].time, use24h)}</span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Illumination */}
       <Card>

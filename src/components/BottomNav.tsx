@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Moon, BarChart2, CalendarDays, Settings, Eye, EyeOff } from "lucide-react";
+import { Moon, BarChart2, CalendarDays, Settings, Eye, EyeOff, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/context/AppContext";
 
@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: "/",         label: "Now",      icon: Moon },
   { href: "/tonight",  label: "Tonight",  icon: BarChart2 },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
+  { href: "/events",   label: "Events",   icon: Sparkles },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
