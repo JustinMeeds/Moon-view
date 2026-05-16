@@ -105,14 +105,13 @@ export function getMoonTimes(date: Date, loc: Location): MoonTimes {
   };
 }
 
-/** Build chart data for a night: 6 PM → 6 AM next day (15-min steps) */
+/** Build chart data for a full 24-hour day: midnight → midnight (15-min steps) */
 export function buildNightChart(date: Date, loc: Location, stepMinutes = 15): NightSummary {
-  // Night spans local 18:00 on `date` to 06:00 next morning
   const start = new Date(date);
-  start.setHours(18, 0, 0, 0);
+  start.setHours(0, 0, 0, 0);
   const end = new Date(date);
   end.setDate(end.getDate() + 1);
-  end.setHours(6, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
 
   const times = buildTimeRange(start, end, stepMinutes);
   const phase = getMoonPhase(date);

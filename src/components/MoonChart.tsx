@@ -75,7 +75,7 @@ export function MoonChart({ data, moonrise, moonset, peak, use24h, nightMode = f
   const dotFill    = nightMode ? "#ff3300" : "#a5b4fc";
   const dotBorder  = nightMode ? "#200000" : "#1e1b4b";
 
-  const tickData = data.filter((_, i) => i % 4 === 0);
+  const tickData = data.filter((_, i) => i % 8 === 0); // every 2 hours across 24h
 
   const handleSliderChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
