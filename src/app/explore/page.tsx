@@ -10,6 +10,7 @@ import { NoLocation } from "@/components/NoLocation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Sunrise, Sunset, TrendingUp } from "lucide-react";
+import { useDeviceOrientation } from "@/hooks/useDeviceOrientation";
 
 function dateToInputValue(d: Date) {
   return d.toISOString().slice(0, 10);
@@ -25,6 +26,7 @@ export default function ExplorePage() {
   const { location, preferences } = useApp();
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [activePoint, setActivePoint] = useState<ChartPoint | null>(null);
+  const { heading, permission: compassPermission, requestPermission } = useDeviceOrientation();
 
   const summary = useMemo(() => {
     if (!location) return null;
@@ -136,9 +138,22 @@ export default function ExplorePage() {
             use24h={use24h}
             nightMode={nightMode}
             size={240}
+            headingDeg={heading}
           />
-          <p className="text-[10px] text-white/30 text-center mt-2">
-            Polar view — N at top, horizon at edge. Drag the chart slider to move the dot.
+          {compassPermission === "prompt" && (
+            <p className="text-center mt-2">
+              <button
+                onClick={requestPermission}
+                className="text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors underline underline-offset-2"
+              >
+                Enable live compass to rotate map
+              </button>
+            </p>
+          )}
+          <p className="text-[10px] text-white/30 text-center mt-1">
+            {heading != null
+              ? "Rotates with your compass — triangle shows direction you're facing"
+              : "Polar view — N at top, horizon at edge. Drag the chart slider to move the dot."}
           </p>
         </CardContent>
       </Card>

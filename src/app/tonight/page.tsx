@@ -12,10 +12,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Sunrise, Sunset, TrendingUp } from "lucide-react";
 import { Countdown } from "@/components/Countdown";
+import { useDeviceOrientation } from "@/hooks/useDeviceOrientation";
 
 export default function TonightPage() {
   const { location, preferences, dayOffset, setDayOffset } = useApp();
   const [activePoint, setActivePoint] = useState<ChartPoint | null>(null);
+  const { heading, permission: compassPermission, requestPermission } = useDeviceOrientation();
 
   const shiftDay = (delta: number) => {
     setDayOffset(dayOffset + delta);
@@ -142,9 +144,22 @@ export default function TonightPage() {
             use24h={use24h}
             nightMode={nightMode}
             size={260}
+            headingDeg={heading}
           />
-          <p className="text-[10px] text-white/30 text-center mt-2">
-            Polar view — N at top, horizon at edge. Drag the chart slider to move the dot.
+          {compassPermission === "prompt" && (
+            <p className="text-center mt-2">
+              <button
+                onClick={requestPermission}
+                className="text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors underline underline-offset-2"
+              >
+                Enable live compass to rotate map
+              </button>
+            </p>
+          )}
+          <p className="text-[10px] text-white/30 text-center mt-1">
+            {heading != null
+              ? "Rotates with your compass — triangle shows direction you're facing"
+              : "Polar view — N at top, horizon at edge. Drag the chart slider to move the dot."}
           </p>
         </CardContent>
       </Card>

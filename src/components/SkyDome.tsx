@@ -15,6 +15,7 @@ interface SkyDomeProps {
   use24h: boolean;
   nightMode?: boolean;
   size?: number;
+  headingDeg?: number | null; // live device heading; when provided, dome rotates
 }
 
 function polarToXY(altDeg: number, azDeg: number, cx: number, cy: number, maxR: number) {
@@ -37,6 +38,7 @@ export function SkyDome({
   use24h,
   nightMode = false,
   size = 260,
+  headingDeg,
 }: SkyDomeProps) {
   const cx = size / 2;
   const cy = size / 2;
@@ -109,6 +111,13 @@ export function SkyDome({
     { label: "W", az: 270 },
   ];
 
+  const liveHeading = headingDeg != null;
+
+  // Facing-indicator triangle: fixed at 12 o'clock, points inward (same style as Compass)
+  const triTipY  = cy - maxR + 3;
+  const triBaseY = cy - maxR - 9;
+  const triHalf  = 5;
+
   return (
     <svg
       width={size}
@@ -117,99 +126,116 @@ export function SkyDome({
       className="select-none mx-auto block"
       aria-label="Sky dome showing moon path tonight"
     >
-      {/* Horizon circle */}
-      <circle cx={cx} cy={cy} r={maxR} fill="none" stroke={ringColor} strokeWidth="1.5" />
-      {/* 60° altitude ring */}
-      <circle cx={cx} cy={cy} r={ring60} fill="none" stroke={ringColor} strokeWidth="1" strokeDasharray="3 4" />
-      {/* 30° altitude ring */}
-      <circle cx={cx} cy={cy} r={ring30} fill="none" stroke={ringColor} strokeWidth="1" strokeDasharray="3 4" />
-      {/* Zenith dot */}
-      <circle cx={cx} cy={cy} r={2} fill={ringColor} />
+      {/* Rotatable map group — spins opposite to heading so N stays aligned with real North */}
+      <g
+        style={{
+          transformOrigin: `${cx}px ${cy}px`,
+          transform: liveHeading ? `rotate(${-headingDeg!}deg)` : undefined,
+          transition: liveHeading ? "transform 0.12s ease-out" : undefined,
+        }}
+      >
+        {/* Horizon circle */}
+        <circle cx={cx} cy={cy} r={maxR} fill="none" stroke={ringColor} strokeWidth="1.5" />
+        {/* 60° altitude ring */}
+        <circle cx={cx} cy={cy} r={ring60} fill="none" stroke={ringColor} strokeWidth="1" strokeDasharray="3 4" />
+        {/* 30° altitude ring */}
+        <circle cx={cx} cy={cy} r={ring30} fill="none" stroke={ringColor} strokeWidth="1" strokeDasharray="3 4" />
+        {/* Zenith dot */}
+        <circle cx={cx} cy={cy} r={2} fill={ringColor} />
 
-      {/* Altitude ring labels */}
-      <text x={cx + 4} y={cy - ring60 - 4} fontSize={8} fill={altLabelC} fontFamily="system-ui">60°</text>
-      <text x={cx + 4} y={cy - ring30 - 4} fontSize={8} fill={altLabelC} fontFamily="system-ui">30°</text>
+        {/* Altitude ring labels */}
+        <text x={cx + 4} y={cy - ring60 - 4} fontSize={8} fill={altLabelC} fontFamily="system-ui">60°</text>
+        <text x={cx + 4} y={cy - ring30 - 4} fontSize={8} fill={altLabelC} fontFamily="system-ui">30°</text>
 
-      {/* Cardinal direction cross-hairs */}
-      {cardinals.map(({ label, az }) => {
-        const { x, y } = polarToXY(0, az, cx, cy, maxR);
-        const tickIn = polarToXY(0, az, cx, cy, maxR - 8);
-        const lx = cx + (maxR + 14) * Math.cos(((az - 90) * Math.PI) / 180);
-        const ly = cy + (maxR + 14) * Math.sin(((az - 90) * Math.PI) / 180);
-        return (
-          <g key={label}>
-            <line x1={tickIn.x} y1={tickIn.y} x2={x} y2={y} stroke={ringColor} strokeWidth="1.5" />
+        {/* Cardinal direction cross-hairs */}
+        {cardinals.map(({ label, az }) => {
+          const { x, y } = polarToXY(0, az, cx, cy, maxR);
+          const tickIn = polarToXY(0, az, cx, cy, maxR - 8);
+          const lx = cx + (maxR + 14) * Math.cos(((az - 90) * Math.PI) / 180);
+          const ly = cy + (maxR + 14) * Math.sin(((az - 90) * Math.PI) / 180);
+          return (
+            <g key={label}>
+              <line x1={tickIn.x} y1={tickIn.y} x2={x} y2={y} stroke={ringColor} strokeWidth="1.5" />
+              <text
+                x={lx} y={ly}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fontSize={label === "N" ? 11 : 10}
+                fontWeight={label === "N" ? "700" : "500"}
+                fill={label === "N" ? cardinalN : cardinalOth}
+                fontFamily="system-ui"
+              >
+                {label}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Moon path fill */}
+        <path d={fillPath} fill={pathFill} />
+        {/* Moon path stroke */}
+        <path d={moonPath} fill="none" stroke={pathColor} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+
+        {/* Moonrise marker */}
+        {riseXY && moonrise && (
+          <g>
+            <circle cx={riseXY.x} cy={riseXY.y} r={4} fill={riseSetColor} />
             <text
-              x={lx} y={ly}
-              textAnchor="middle"
-              dominantBaseline="central"
-              fontSize={label === "N" ? 11 : 10}
-              fontWeight={label === "N" ? "700" : "500"}
-              fill={label === "N" ? cardinalN : cardinalOth}
-              fontFamily="system-ui"
+              x={riseXY.x + (riseXY.x < cx ? -7 : 7)}
+              y={riseXY.y - 8}
+              textAnchor={riseXY.x < cx ? "end" : "start"}
+              fontSize={8} fill={riseSetColor} fontFamily="system-ui"
             >
-              {label}
+              {formatTime(moonrise, use24h)}
             </text>
           </g>
-        );
-      })}
+        )}
 
-      {/* Moon path fill */}
-      <path d={fillPath} fill={pathFill} />
-      {/* Moon path stroke */}
-      <path d={moonPath} fill="none" stroke={pathColor} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+        {/* Moonset marker */}
+        {setXY && moonset && (
+          <g>
+            <circle cx={setXY.x} cy={setXY.y} r={4} fill={riseSetColor} />
+            <text
+              x={setXY.x + (setXY.x < cx ? -7 : 7)}
+              y={setXY.y - 8}
+              textAnchor={setXY.x < cx ? "end" : "start"}
+              fontSize={8} fill={riseSetColor} fontFamily="system-ui"
+            >
+              {formatTime(moonset, use24h)}
+            </text>
+          </g>
+        )}
 
-      {/* Moonrise marker */}
-      {riseXY && moonrise && (
-        <g>
-          <circle cx={riseXY.x} cy={riseXY.y} r={4} fill={riseSetColor} />
-          <text
-            x={riseXY.x + (riseXY.x < cx ? -7 : 7)}
-            y={riseXY.y - 8}
-            textAnchor={riseXY.x < cx ? "end" : "start"}
-            fontSize={8} fill={riseSetColor} fontFamily="system-ui"
-          >
-            {formatTime(moonrise, use24h)}
-          </text>
-        </g>
-      )}
+        {/* Peak marker */}
+        {peakXY && peak && (
+          <g>
+            <circle cx={peakXY.x} cy={peakXY.y} r={5} fill="none" stroke={peakColor} strokeWidth="1.5" />
+            <text
+              x={peakXY.x}
+              y={peakXY.y - 10}
+              textAnchor="middle"
+              fontSize={8} fill={peakColor} fontFamily="system-ui"
+            >
+              Peak {peak.altitudeDeg.toFixed(0)}°
+            </text>
+          </g>
+        )}
 
-      {/* Moonset marker */}
-      {setXY && moonset && (
-        <g>
-          <circle cx={setXY.x} cy={setXY.y} r={4} fill={riseSetColor} />
-          <text
-            x={setXY.x + (setXY.x < cx ? -7 : 7)}
-            y={setXY.y - 8}
-            textAnchor={setXY.x < cx ? "end" : "start"}
-            fontSize={8} fill={riseSetColor} fontFamily="system-ui"
-          >
-            {formatTime(moonset, use24h)}
-          </text>
-        </g>
-      )}
+        {/* Current / highlight position */}
+        {highlightXY && (
+          <g>
+            <circle cx={highlightXY.x} cy={highlightXY.y} r={8} fill="none" stroke={nowRing} strokeWidth="1.5" />
+            <circle cx={highlightXY.x} cy={highlightXY.y} r={4} fill={nowColor} />
+          </g>
+        )}
+      </g>
 
-      {/* Peak marker */}
-      {peakXY && peak && (
-        <g>
-          <circle cx={peakXY.x} cy={peakXY.y} r={5} fill="none" stroke={peakColor} strokeWidth="1.5" />
-          <text
-            x={peakXY.x}
-            y={peakXY.y - 10}
-            textAnchor="middle"
-            fontSize={8} fill={peakColor} fontFamily="system-ui"
-          >
-            Peak {peak.altitudeDeg.toFixed(0)}°
-          </text>
-        </g>
-      )}
-
-      {/* Current / highlight position */}
-      {highlightXY && (
-        <g>
-          <circle cx={highlightXY.x} cy={highlightXY.y} r={8} fill="none" stroke={nowRing} strokeWidth="1.5" />
-          <circle cx={highlightXY.x} cy={highlightXY.y} r={4} fill={nowColor} />
-        </g>
+      {/* Facing indicator — fixed triangle at 12 o'clock, only when live heading is active */}
+      {liveHeading && (
+        <polygon
+          points={`${cx},${triTipY} ${cx - triHalf},${triBaseY} ${cx + triHalf},${triBaseY}`}
+          fill={cardinalN}
+        />
       )}
     </svg>
   );
