@@ -47,7 +47,7 @@ export default function CalendarPage() {
 
   const calDays = useMemo(() => getCalendarDays(viewYear, viewMonth), [viewYear, viewMonth]);
 
-  // Pre-compute phase emoji for each day — fast sync SunCalc
+  // Pre-compute phase emoji for each day — fast sync astronomy-engine call
   const dayData = useMemo(() => {
     return calDays.map((d) => {
       if (!d) return null;

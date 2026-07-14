@@ -1,6 +1,5 @@
-import SunCalc from "suncalc";
+import * as Astronomy from "astronomy-engine";
 import { Location, getMoonPosition, getMoonTimes, getMoonPhase } from "./moon";
-import { formatTime } from "./utils";
 
 export interface SunTimes {
   sunrise: Date | null;
@@ -19,18 +18,33 @@ export interface SkyEvent {
   type: "moonrise-sunset" | "moonrise-golden" | "moonset-sunrise" | "crescent-twilight" | "moon-daylight";
 }
 
+/** Sun events within the local calendar day containing `date` */
 export function getSunTimes(date: Date, loc: Location): SunTimes {
-  const t = SunCalc.getTimes(date, loc.lat, loc.lng);
-  const maybe = (d: unknown): Date | null =>
-    d instanceof Date && !isNaN(d.getTime()) ? d : null;
+  const obs = new Astronomy.Observer(loc.lat, loc.lng, 0);
+  const dayStart = new Date(date);
+  dayStart.setHours(0, 0, 0, 0);
+  const Sun = Astronomy.Body.Sun;
+
+  const time = (t: { date: Date } | null): Date | null => (t ? t.date : null);
+  // SearchAltitude: sun center crossing the given altitude (deg), rising (+1) or setting (-1)
+  const atAlt = (direction: 1 | -1, altitudeDeg: number): Date | null =>
+    time(Astronomy.SearchAltitude(Sun, obs, direction, dayStart, 1, altitudeDeg));
+
+  let solarNoon: Date | null = null;
+  try {
+    solarNoon = Astronomy.SearchHourAngle(Sun, obs, 0, dayStart).time.date;
+  } catch {
+    solarNoon = null;
+  }
+
   return {
-    sunrise:                maybe(t.sunrise),
-    sunset:                 maybe(t.sunset),
-    goldenHourMorningEnd:   maybe(t.goldenHourEnd),
-    goldenHourEveningStart: maybe(t.goldenHour),
-    solarNoon:              maybe(t.solarNoon),
-    dusk:                   maybe(t.dusk),
-    dawn:                   maybe(t.dawn),
+    sunrise: time(Astronomy.SearchRiseSet(Sun, obs, +1, dayStart, 1)),
+    sunset:  time(Astronomy.SearchRiseSet(Sun, obs, -1, dayStart, 1)),
+    goldenHourMorningEnd:   atAlt(+1, 6),  // sun climbs past 6°
+    goldenHourEveningStart: atAlt(-1, 6),  // sun drops below 6°
+    solarNoon,
+    dawn: atAlt(+1, -6), // civil twilight start
+    dusk: atAlt(-1, -6), // civil twilight end
   };
 }
 

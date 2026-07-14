@@ -1,6 +1,5 @@
 import * as Astronomy from "astronomy-engine";
-import SunCalc from "suncalc";
-import { Location } from "./moon";
+import { Location, getMoonPosition } from "./moon";
 import { azimuthToCardinal } from "./utils";
 
 export type PlanetName = "Mercury" | "Venus" | "Mars" | "Jupiter" | "Saturn";
@@ -24,14 +23,6 @@ export const PLANET_META: Record<PlanetName, { symbol: string; color: string }> 
 };
 
 const PLANETS: PlanetName[] = ["Venus", "Mars", "Jupiter", "Saturn", "Mercury"];
-
-function radToDeg(r: number): number {
-  return (r * 180) / Math.PI;
-}
-
-function suncalcAzimuthToCompass(az: number): number {
-  return ((radToDeg(az) + 180) % 360 + 360) % 360;
-}
 
 export function getUpcomingConjunctions(
   from: Date,
@@ -93,20 +84,19 @@ function buildConjunction(
   sep: number,
   loc: Location
 ): PlanetConjunction {
-  const moonPos = SunCalc.getMoonPosition(time, loc.lat, loc.lng);
-  const altDeg = (moonPos.altitude * 180) / Math.PI;
-  const azDeg = (((moonPos.azimuth * 180) / Math.PI) + 180 + 360) % 360;
+  const moonPos = getMoonPosition(time, loc);
 
-  const sunPos = SunCalc.getPosition(time, loc.lat, loc.lng);
-  const sunAltDeg = (sunPos.altitude * 180) / Math.PI;
+  const obs = new Astronomy.Observer(loc.lat, loc.lng, 0);
+  const sunEq = Astronomy.Equator(Astronomy.Body.Sun, time, obs, true, true);
+  const sunAltDeg = Astronomy.Horizon(time, obs, sunEq.ra, sunEq.dec).altitude;
 
   return {
     date: time,
     planet,
     separationDeg: Math.round(sep * 10) / 10,
-    moonAltitudeDeg: Math.round(altDeg * 10) / 10,
-    moonAzimuthDeg: Math.round(azDeg * 10) / 10,
-    cardinal: azimuthToCardinal(azDeg),
-    isNightVisible: altDeg > 5 && sunAltDeg < -6,
+    moonAltitudeDeg: Math.round(moonPos.altitudeDeg * 10) / 10,
+    moonAzimuthDeg: Math.round(moonPos.azimuthDeg * 10) / 10,
+    cardinal: azimuthToCardinal(moonPos.azimuthDeg),
+    isNightVisible: moonPos.altitudeDeg > 5 && sunAltDeg < -6,
   };
 }

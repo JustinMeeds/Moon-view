@@ -1,4 +1,4 @@
-import SunCalc from "suncalc";
+import * as Astronomy from "astronomy-engine";
 import { azimuthToCardinal, buildTimeRange } from "./utils";
 
 export interface Location {
@@ -48,28 +48,27 @@ export interface NightSummary {
   phase: MoonPhase;
 }
 
-/** SunCalc altitude is in radians from the horizon */
-function radToDeg(r: number): number {
-  return (r * 180) / Math.PI;
+function observer(loc: Location): Astronomy.Observer {
+  return new Astronomy.Observer(loc.lat, loc.lng, 0);
 }
 
-/** SunCalc azimuth is in radians, measured from South, clockwise.
- *  We want 0=North, clockwise (standard compass). */
-function suncalcAzimuthToCompass(az: number): number {
-  // SunCalc gives azimuth from South, clockwise in radians
-  return ((radToDeg(az) + 180) % 360 + 360) % 360;
+/** Geocentric moon distance in km */
+function moonDistanceKm(date: Date): number {
+  const vec = Astronomy.GeoVector(Astronomy.Body.Moon, date, true);
+  return vec.Length() * Astronomy.KM_PER_AU;
 }
 
 export function getMoonPosition(date: Date, loc: Location): MoonPosition {
-  const pos = SunCalc.getMoonPosition(date, loc.lat, loc.lng);
-  const altitudeDeg = radToDeg(pos.altitude);
-  const azimuthDeg = suncalcAzimuthToCompass(pos.azimuth);
+  const obs = observer(loc);
+  const eq = Astronomy.Equator(Astronomy.Body.Moon, date, obs, true, true);
+  // Airless (unrefracted) topocentric altitude — matches USNO convention
+  const hor = Astronomy.Horizon(date, obs, eq.ra, eq.dec);
   return {
-    altitudeDeg,
-    azimuthDeg,
-    cardinal: azimuthToCardinal(azimuthDeg),
-    isVisible: altitudeDeg > 0,
-    distanceKm: pos.distance,
+    altitudeDeg: hor.altitude,
+    azimuthDeg: hor.azimuth,
+    cardinal: azimuthToCardinal(hor.azimuth),
+    isVisible: hor.altitude > 0,
+    distanceKm: moonDistanceKm(date),
   };
 }
 
@@ -86,24 +85,42 @@ const PHASE_NAMES: { max: number; label: string; emoji: string }[] = [
 ];
 
 export function getMoonPhase(date: Date): MoonPhase {
-  const illum = SunCalc.getMoonIllumination(date);
-  const phase = illum.phase;
+  // MoonPhase: ecliptic longitude difference in degrees — 0=new, 90=FQ, 180=full, 270=LQ
+  const phase = Astronomy.MoonPhase(date) / 360;
+  const illum = Astronomy.Illumination(Astronomy.Body.Moon, date);
   const entry = PHASE_NAMES.find((p) => phase <= p.max)!;
   return {
-    fraction: illum.fraction,
+    fraction: illum.phase_fraction,
     phase,
     label: entry.label,
     emoji: entry.emoji,
   };
 }
 
+/** Rise/set events within the local calendar day containing `date` */
 export function getMoonTimes(date: Date, loc: Location): MoonTimes {
-  const times = SunCalc.getMoonTimes(date, loc.lat, loc.lng);
+  const obs = observer(loc);
+  const dayStart = new Date(date);
+  dayStart.setHours(0, 0, 0, 0);
+  const rise = Astronomy.SearchRiseSet(Astronomy.Body.Moon, obs, +1, dayStart, 1);
+  const set = Astronomy.SearchRiseSet(Astronomy.Body.Moon, obs, -1, dayStart, 1);
+
+  let alwaysUp = false;
+  let alwaysDown = false;
+  if (!rise && !set) {
+    // No events all day — moon is either up or down the whole time
+    const midday = new Date(dayStart.getTime() + 12 * 3_600_000);
+    const eq = Astronomy.Equator(Astronomy.Body.Moon, midday, obs, true, true);
+    const hor = Astronomy.Horizon(midday, obs, eq.ra, eq.dec);
+    alwaysUp = hor.altitude > 0;
+    alwaysDown = !alwaysUp;
+  }
+
   return {
-    rise: times.rise instanceof Date ? times.rise : null,
-    set: times.set instanceof Date ? times.set : null,
-    alwaysUp: !!(times as { alwaysUp?: boolean }).alwaysUp,
-    alwaysDown: !!(times as { alwaysDown?: boolean }).alwaysDown,
+    rise: rise ? rise.date : null,
+    set: set ? set.date : null,
+    alwaysUp,
+    alwaysDown,
   };
 }
 
@@ -121,16 +138,17 @@ export interface LunarDistance {
   nextPerigeeKm: number | null;
 }
 
-export function getLunarDistance(date: Date, loc: Location): LunarDistance {
-  const pos = getMoonPosition(date, loc);
+export function getLunarDistance(date: Date, loc?: Location): LunarDistance {
+  void loc; // distance is geocentric; param kept for API stability
+  const distanceKm = moonDistanceKm(date);
   const pct = Math.round(
-    Math.max(0, Math.min(100, ((MOON_MAX_KM - pos.distanceKm) / (MOON_MAX_KM - MOON_MIN_KM)) * 100))
+    Math.max(0, Math.min(100, ((MOON_MAX_KM - distanceKm) / (MOON_MAX_KM - MOON_MIN_KM)) * 100))
   );
   const phase = getMoonPhase(date);
-  const isSupermoon = pos.distanceKm < SUPERMOON_KM && phase.fraction > 0.85;
-  const next = findNextPerigee(date, loc);
+  const isSupermoon = distanceKm < SUPERMOON_KM && phase.fraction > 0.85;
+  const next = findNextPerigee(date);
   return {
-    distanceKm: Math.round(pos.distanceKm),
+    distanceKm: Math.round(distanceKm),
     percentClose: pct,
     isSupermoon,
     nextPerigee: next?.date ?? null,
@@ -138,28 +156,12 @@ export function getLunarDistance(date: Date, loc: Location): LunarDistance {
   };
 }
 
-function findNextPerigee(
-  from: Date,
-  loc: Location
-): { date: Date; distanceKm: number } | null {
-  // Scan hourly for 35 days; look for distance minimum (local minima)
-  const STEP_MS = 3_600_000;
-  const MAX_STEPS = 35 * 24;
-  let prevDist = getMoonPosition(from, loc).distanceKm;
-  let wasDecreasing = false;
-
-  for (let i = 1; i <= MAX_STEPS; i++) {
-    const t = new Date(from.getTime() + i * STEP_MS);
-    const dist = getMoonPosition(t, loc).distanceKm;
-    if (wasDecreasing && dist > prevDist) {
-      // Just passed minimum — step back to previous hour
-      const perigeeTime = new Date(t.getTime() - STEP_MS);
-      return { date: perigeeTime, distanceKm: prevDist };
-    }
-    wasDecreasing = dist < prevDist;
-    prevDist = dist;
+function findNextPerigee(from: Date): { date: Date; distanceKm: number } | null {
+  let apsis = Astronomy.SearchLunarApsis(from);
+  if (apsis.kind !== Astronomy.ApsisKind.Pericenter) {
+    apsis = Astronomy.NextLunarApsis(apsis);
   }
-  return null;
+  return { date: apsis.time.date, distanceKm: apsis.dist_km };
 }
 
 // ─── Azimuth finder ──────────────────────────────────────────────────────────
@@ -234,7 +236,7 @@ export function buildNightChart(date: Date, loc: Location, stepMinutes = 15): Ni
     };
   });
 
-  // Moonrise / moonset from SunCalc for the date
+  // Moonrise / moonset for the date
   const moonTimes = getMoonTimes(date, loc);
 
   // Peak: highest altitude point

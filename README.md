@@ -32,7 +32,7 @@ A mobile-first Moon Tracker PWA. Open it on your phone and instantly see where t
 - **Next.js 16** — App Router, TypeScript
 - **Tailwind CSS v4** — styling
 - **shadcn/ui primitives** — custom dark-themed components
-- **SunCalc** — moon position, phase, rise/set calculations
+- **astronomy-engine** — moon/sun/planet positions, phase, rise/set calculations (arcminute accuracy)
 - **Recharts** — altitude-over-time area chart
 - **Supabase** — optional auth, saved locations, preferences
 - **OpenStreetMap Nominatim** — free geocoding (no API key)
@@ -151,7 +151,7 @@ src/
 ├── context/
 │   └── AppContext.tsx      # Global state — location, preferences, auth
 ├── lib/
-│   ├── moon.ts             # SunCalc wrapper — position, phase, rise/set, charts
+│   ├── moon.ts             # astronomy-engine wrapper — position, phase, rise/set, charts
 │   ├── supabase.ts         # Supabase client singleton + types
 │   └── utils.ts            # Formatting helpers, azimuth→cardinal
 └── types/
@@ -172,16 +172,20 @@ supabase/
 
 ## Moon Calculations
 
-All calculations use [SunCalc](https://github.com/mourner/suncalc) with these conversions:
+All calculations use [astronomy-engine](https://github.com/cosinekitty/astronomy) (VSOP87/ELP-based, verified upstream against JPL Horizons):
 
-| Value | SunCalc output | Conversion |
-|-------|---------------|-----------|
-| Altitude | radians from horizon | × (180/π) |
-| Azimuth | radians from South, clockwise | + 180°, mod 360° |
+| Value | Source | Notes |
+|-------|--------|-------|
+| Altitude / Azimuth | `Equator` + `Horizon` | Topocentric, airless (USNO convention); 0° az = North, clockwise |
 | Cardinal | azimuth degrees | `round(az / 22.5) % 16` → 16-point label |
-| Visibility | altitude > 0° | boolean |
+| Phase / Illumination | `MoonPhase`, `Illumination` | 0 = new, 0.5 = full |
+| Rise / Set | `SearchRiseSet` | Refraction-corrected, per local calendar day |
+| Distance | `GeoVector` | Geocentric, km |
+| Perigee | `SearchLunarApsis` | Next perigee date + distance |
 
-Chart data is computed at 15-minute intervals from 6 PM to 6 AM local time.
+Values are regression-tested against USNO reference data (`npm test`) — rise/set within ±2 min, positions within ±0.05°.
+
+Chart data is computed at 15-minute intervals across the full 24-hour day.
 
 ---
 

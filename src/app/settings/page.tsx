@@ -377,7 +377,7 @@ export default function SettingsPage() {
         <CardContent className="space-y-2 text-sm text-white/50">
           <div className="flex items-center gap-2">
             <Compass className="w-4 h-4" />
-            <span>Moon calculations powered by SunCalc</span>
+            <span>Moon calculations powered by astronomy-engine</span>
           </div>
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4" />
