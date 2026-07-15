@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { getMoonPosition, getMoonPhase, getMoonTimes, getLunarDistance } from "@/lib/moon";
-import { getSkyEvents } from "@/lib/sun";
-import { getUpcomingConjunctions, PLANET_META } from "@/lib/planets";
+import { getSkyEvents, type SkyEvent } from "@/lib/sun";
+import { getUpcomingConjunctions, PLANET_META, type PlanetConjunction } from "@/lib/planets";
 import { formatAltitude, formatTime, formatDeg, formatDateLabel } from "@/lib/utils";
 import { Compass } from "@/components/Compass";
 import { ElevationArc } from "@/components/ElevationArc";
@@ -52,6 +52,42 @@ export default function HomePage() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const isToday = dayOffset === 0;
+
+  const displayDate = useMemo(() => {
+    if (isToday) return now;
+    const d = new Date(now);
+    d.setDate(d.getDate() + dayOffset);
+    d.setHours(12, 0, 0, 0);
+    return d;
+  }, [now, isToday, dayOffset]);
+
+  // Cheap per-tick readout — recomputes as the clock advances (~every 10s),
+  // but not on every compass/orientation event.
+  const moonData = useMemo(() => {
+    if (!location) return null;
+    return {
+      pos: getMoonPosition(displayDate, location),
+      phase: getMoonPhase(displayDate),
+      times: getMoonTimes(displayDate, location),
+    };
+  }, [displayDate, location]);
+
+  // Heavy daily scans (perigee, conjunctions, sky events) keyed on the hour,
+  // so they don't re-run on every render — especially compass events (~60/s).
+  const hourBucket = Math.floor(now.getTime() / 3_600_000);
+  const eventsData = useMemo(() => {
+    if (!location || !isToday) {
+      return { lunarDist: null, skyEvents: [] as SkyEvent[], conjunctions: [] as PlanetConjunction[] };
+    }
+    const anchor = new Date(hourBucket * 3_600_000);
+    return {
+      lunarDist: getLunarDistance(anchor, location),
+      skyEvents: getSkyEvents(anchor, location),
+      conjunctions: getUpcomingConjunctions(anchor, 14, location),
+    };
+  }, [location, isToday, hourBucket]);
+
   const handleShare = async () => {
     const d = new Date();
     d.setDate(d.getDate() + dayOffset);
@@ -68,27 +104,11 @@ export default function HomePage() {
     } catch {}
   };
 
-  if (!location) return <NoLocation />;
+  if (!location || !moonData) return <NoLocation />;
 
-  const isToday = dayOffset === 0;
-
-  const displayDate = (() => {
-    if (isToday) return now;
-    const d = new Date(now);
-    d.setDate(d.getDate() + dayOffset);
-    d.setHours(12, 0, 0, 0);
-    return d;
-  })();
-
-  const moonPos   = getMoonPosition(displayDate, location);
-  const moonPhase = getMoonPhase(displayDate);
-  const moonTimes = getMoonTimes(displayDate, location);
-
-  // Events data — only compute for today to keep home page fast
-  const lunarDist  = isToday ? getLunarDistance(now, location) : null;
-  const skyEvents  = isToday ? getSkyEvents(now, location) : [];
-  const conjunctions = isToday ? getUpcomingConjunctions(now, 14, location) : [];
-  const nextConj   = conjunctions[0] ?? null;
+  const { pos: moonPos, phase: moonPhase, times: moonTimes } = moonData;
+  const { lunarDist, skyEvents, conjunctions } = eventsData;
+  const nextConj = conjunctions[0] ?? null;
 
   const { use24h, useCardinal, nightMode } = preferences;
 
@@ -242,7 +262,7 @@ export default function HomePage() {
               </div>
               <div>
                 <p className="text-[10px] text-white/40 uppercase tracking-wide">Moonset</p>
-                <p className="text-base font-semibond text-white">
+                <p className="text-base font-semibold text-white">
                   {moonTimes.set ? formatTime(moonTimes.set, use24h) : moonTimes.alwaysDown ? "Always down" : "—"}
                 </p>
               </div>
