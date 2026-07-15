@@ -2,10 +2,11 @@
 
 import React, { useMemo, useState, useCallback } from "react";
 import { useApp } from "@/context/AppContext";
-import { buildNightChart, ChartPoint } from "@/lib/moon";
+import { buildNightChart, getMoonPosition, ChartPoint } from "@/lib/moon";
 import { formatTime, formatDateLabel, formatAltitude } from "@/lib/utils";
 import { MoonChart } from "@/components/MoonChart";
 import { SkyDome } from "@/components/SkyDome";
+import { HorizonPath } from "@/components/HorizonPath";
 import { NoLocation } from "@/components/NoLocation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +51,15 @@ export default function TonightPage() {
   );
 
   const handleScrub = useCallback((point: ChartPoint) => setActivePoint(point), []);
+
+  // Exact horizon bearings for rise/set markers
+  const { riseAz, setAz } = useMemo(() => {
+    if (!location || !summary) return { riseAz: null, setAz: null };
+    return {
+      riseAz: summary.moonrise ? getMoonPosition(summary.moonrise, location).azimuthDeg : null,
+      setAz: summary.moonset ? getMoonPosition(summary.moonset, location).azimuthDeg : null,
+    };
+  }, [location, summary]);
 
   if (!location) return <NoLocation />;
   if (!summary) return null;
@@ -145,6 +155,41 @@ export default function TonightPage() {
         </CardContent>
       </Card>
 
+      {/* Horizon view — first-person: where the moon rises and travels */}
+      <Card>
+        <CardHeader><CardTitle>Horizon View</CardTitle></CardHeader>
+        <CardContent>
+          <HorizonPath
+            data={summary.chartPoints}
+            highlightTime={activePoint?.time ?? new Date()}
+            moonrise={summary.moonrise}
+            moonset={summary.moonset}
+            riseAzimuthDeg={riseAz}
+            setAzimuthDeg={setAz}
+            peak={summary.peak}
+            use24h={use24h}
+            useCardinal={useCardinal}
+            nightMode={nightMode}
+            headingDeg={heading}
+          />
+          {compassPermission === "prompt" && (
+            <p className="text-center mt-2">
+              <button
+                onClick={requestPermission}
+                className="text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors underline underline-offset-2"
+              >
+                Enable live compass to point you at the moon
+              </button>
+            </p>
+          )}
+          <p className="text-[10px] text-white/30 text-center mt-1">
+            {heading != null
+              ? "Follows your compass — the marker on the horizon line is the moonrise spot"
+              : "Your view standing outside — drag to look around, ↑ marks the exact moonrise spot"}
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Sky dome */}
       <Card>
         <CardHeader><CardTitle>Sky Path</CardTitle></CardHeader>
@@ -160,16 +205,6 @@ export default function TonightPage() {
             size={260}
             headingDeg={heading}
           />
-          {compassPermission === "prompt" && (
-            <p className="text-center mt-2">
-              <button
-                onClick={requestPermission}
-                className="text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors underline underline-offset-2"
-              >
-                Enable live compass to rotate map
-              </button>
-            </p>
-          )}
           <p className="text-[10px] text-white/30 text-center mt-1">
             {heading != null
               ? "Rotates with your compass — triangle shows direction you're facing"
