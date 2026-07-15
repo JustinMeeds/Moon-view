@@ -15,7 +15,7 @@ import { ChevronLeft, ChevronRight, Sunrise, Sunset, TrendingUp } from "lucide-r
 import { Countdown } from "@/components/Countdown";
 import { useDeviceOrientation } from "@/hooks/useDeviceOrientation";
 import { getSkyEvents } from "@/lib/sun";
-import { getUpcomingConjunctions } from "@/lib/planets";
+import { getUpcomingConjunctions, getSkyBodies } from "@/lib/planets";
 import { SkyEventsCard } from "@/components/SkyEventsCard";
 import { ConjunctionsCard } from "@/components/ConjunctionsCard";
 
@@ -51,6 +51,20 @@ export default function TonightPage() {
   );
 
   const handleScrub = useCallback((point: ChartPoint) => setActivePoint(point), []);
+
+  // Reference instant for the horizon view: scrub time, else now (today)
+  // or the moon's peak when browsing another day
+  const refTime = useMemo(() => {
+    if (activePoint) return activePoint.time;
+    if (dayOffset === 0) return new Date();
+    return summary?.peak?.time ?? baseDate;
+  }, [activePoint, dayOffset, summary, baseDate]);
+
+  // Planet/sun overlay positions at the reference instant
+  const skyBodies = useMemo(
+    () => (location ? getSkyBodies(refTime, location) : []),
+    [location, refTime]
+  );
 
   // Exact horizon bearings for rise/set markers
   const { riseAz, setAz } = useMemo(() => {
@@ -161,7 +175,7 @@ export default function TonightPage() {
         <CardContent>
           <HorizonPath
             data={summary.chartPoints}
-            highlightTime={activePoint?.time ?? new Date()}
+            highlightTime={refTime}
             moonrise={summary.moonrise}
             moonset={summary.moonset}
             riseAzimuthDeg={riseAz}
@@ -171,6 +185,7 @@ export default function TonightPage() {
             useCardinal={useCardinal}
             nightMode={nightMode}
             headingDeg={heading}
+            bodies={skyBodies}
           />
           {compassPermission === "prompt" && (
             <p className="text-center mt-2">

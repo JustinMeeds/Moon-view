@@ -8,12 +8,15 @@ import { getUpcomingConjunctions } from "@/lib/planets";
 import { LunarDistanceCard } from "@/components/LunarDistanceCard";
 import { SkyEventsCard } from "@/components/SkyEventsCard";
 import { ConjunctionsCard } from "@/components/ConjunctionsCard";
+import { EventSkyCard } from "@/components/EventSkyCard";
 import { PlanMyShot } from "@/components/PlanMyShot";
 import { NoLocation } from "@/components/NoLocation";
+import { useDeviceOrientation } from "@/hooks/useDeviceOrientation";
 
 export default function EventsPage() {
   const { location, preferences } = useApp();
-  const { use24h, nightMode } = preferences;
+  const { use24h, useCardinal, nightMode } = preferences;
+  const { heading, permission: compassPermission, requestPermission } = useDeviceOrientation();
 
   const now = useMemo(() => new Date(), []);
 
@@ -40,6 +43,21 @@ export default function EventsPage() {
         <h1 className="text-xl font-bold text-white">Sky Events</h1>
         <p className="text-xs text-white/40 mt-0.5">Conjunctions, overlaps &amp; planning tools</p>
       </div>
+
+      {/* Event Sky — tap an event, see where it happens on your horizon */}
+      <EventSkyCard
+        location={location}
+        now={now}
+        conjunctions={conjunctions}
+        skyEvents={skyEvents}
+        nextPerigee={lunarDistance?.nextPerigee}
+        use24h={use24h}
+        useCardinal={useCardinal}
+        nightMode={nightMode}
+        headingDeg={heading}
+        compassPrompt={compassPermission === "prompt"}
+        onEnableCompass={requestPermission}
+      />
 
       {/* Upcoming conjunctions — the headline feature */}
       <ConjunctionsCard

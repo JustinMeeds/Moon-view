@@ -2,6 +2,7 @@
 
 import React, { useMemo, useRef, useState, useCallback } from "react";
 import { ChartPoint } from "@/lib/moon";
+import { SkyBody } from "@/lib/planets";
 import { formatTime, azimuthToCardinal } from "@/lib/utils";
 
 interface HorizonPathProps {
@@ -19,6 +20,28 @@ interface HorizonPathProps {
   useCardinal?: boolean;
   nightMode?: boolean;
   headingDeg?: number | null; // live device heading; when provided, view follows compass
+  /** Planets/sun to overlay, positioned at the same instant as highlightTime */
+  bodies?: SkyBody[];
+  /** Override the automatic rise/peak framing (e.g. center on an event bearing) */
+  defaultCenterDeg?: number;
+}
+
+/** Angular separation between two alt/az directions, in degrees */
+function angularSep(alt1: number, az1: number, alt2: number, az2: number): number {
+  const r = Math.PI / 180;
+  const s =
+    Math.sin(alt1 * r) * Math.sin(alt2 * r) +
+    Math.cos(alt1 * r) * Math.cos(alt2 * r) * Math.cos((az1 - az2) * r);
+  return Math.acos(Math.max(-1, Math.min(1, s))) / r;
+}
+
+/** Dot radius from apparent magnitude — brighter body, bigger dot */
+function magToRadius(mag: number): number {
+  if (mag <= -4) return 4;    // Venus
+  if (mag <= -2) return 3.4;  // Jupiter
+  if (mag <= 0) return 2.8;
+  if (mag <= 1.5) return 2.3;
+  return 1.8;
 }
 
 /** Signed shortest angular difference a→b in (−180, 180] */
@@ -47,6 +70,8 @@ export function HorizonPath({
   useCardinal = true,
   nightMode = false,
   headingDeg,
+  bodies,
+  defaultCenterDeg,
 }: HorizonPathProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const dragRef = useRef<{ startX: number; startCenter: number } | null>(null);
@@ -76,6 +101,7 @@ export function HorizonPath({
   // Default framing: frame both the moonrise spot and the peak when possible,
   // else center whichever exists
   const defaultCenter = useMemo(() => {
+    if (defaultCenterDeg != null) return defaultCenterDeg;
     if (riseAzimuthDeg != null && peak) {
       const mid = riseAzimuthDeg + wrap180(peak.azimuthDeg - riseAzimuthDeg) / 2;
       return ((mid % 360) + 360) % 360;
@@ -83,7 +109,7 @@ export function HorizonPath({
     if (riseAzimuthDeg != null) return riseAzimuthDeg;
     if (peak) return peak.azimuthDeg;
     return data.length > 0 ? data[0].azimuthDeg : 180;
-  }, [riseAzimuthDeg, peak, data]);
+  }, [defaultCenterDeg, riseAzimuthDeg, peak, data]);
 
   const viewCenter =
     panCenter ?? (liveHeading ? headingDeg! : defaultCenter);
@@ -174,19 +200,15 @@ export function HorizonPath({
     return ticks;
   }, [viewCenter, azToX, useCardinal]);
 
-  // Turn hint: guide toward the moon (if up) or the moonrise spot
+  // Turn hint: guide toward the moon at the displayed instant, or the moonrise spot
   const hint = useMemo(() => {
     if (!liveHeading) return null;
-    const now = Date.now();
-    const nowPoint = data.reduce((best, p) =>
-      Math.abs(p.timestamp - now) < Math.abs(best.timestamp - now) ? p : best
-    );
     let targetAz: number | null = null;
     let targetLabel = "";
-    if (nowPoint?.isVisible) {
-      targetAz = nowPoint.azimuthDeg;
+    if (highlightPoint?.isVisible) {
+      targetAz = highlightPoint.azimuthDeg;
       targetLabel = "moon";
-    } else if (riseAzimuthDeg != null && moonrise && moonrise.getTime() > now) {
+    } else if (riseAzimuthDeg != null) {
       targetAz = riseAzimuthDeg;
       targetLabel = "moonrise";
     }
@@ -196,7 +218,7 @@ export function HorizonPath({
     const dir = delta > 0 ? "→" : "←";
     const turn = `turn ${dir === "←" ? "left" : "right"} ${Math.abs(Math.round(delta))}°`;
     return { text: `${dir === "←" ? "← " : ""}${turn} to ${targetLabel}${dir === "→" ? " →" : ""}`, delta };
-  }, [liveHeading, headingDeg, data, riseAzimuthDeg, moonrise]);
+  }, [liveHeading, headingDeg, highlightPoint, riseAzimuthDeg]);
 
   // Drag to pan
   const onPointerDown = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
@@ -321,6 +343,54 @@ export function HorizonPath({
             </g>
           );
         })()}
+
+        {/* Planet / sun overlay at the displayed instant */}
+        {bodies?.map((b, bi) => {
+          const isSun = b.name === "Sun";
+          if (b.altitudeDeg < (isSun ? -12 : -8)) return null;
+          const bx = azToX(b.azimuthDeg);
+          if (!inView(bx)) return null;
+          const by = Math.min(altToY(b.altitudeDeg), HORIZON_Y + BELOW_CLIP - 4);
+          const color = nightMode ? "#e04a00" : b.colorHex;
+          const dim = b.altitudeDeg < 0;
+          const r = isSun ? 7 : magToRadius(b.magnitude);
+          // Stagger label vertical offset by index to reduce pile-ups in clusters
+          const labelDy = bi % 2 === 0 ? 3 : 13;
+          return (
+            <g key={b.name} opacity={dim ? 0.35 : isSun ? 0.9 : 1}>
+              <circle cx={bx} cy={by} r={r} fill={color} />
+              {isSun && <circle cx={bx} cy={by} r={r + 3.5} fill="none" stroke={color} strokeWidth={1} opacity={0.5} />}
+              {!dim && (
+                <text x={bx + r + 4} y={by + labelDy} fontSize={8.5} fill={color} fontFamily="system-ui">
+                  {b.symbol} {b.name}
+                </text>
+              )}
+            </g>
+          );
+        })}
+
+        {/* Emergent conjunction ring: moon within 5° of a planet at this instant */}
+        {highlightPoint && highlightPoint.altitudeDeg > -5 && bodies?.map((b) => {
+          if (b.name === "Sun" || b.altitudeDeg < -5) return null;
+          const sep = angularSep(highlightPoint.altitudeDeg, highlightPoint.azimuthDeg, b.altitudeDeg, b.azimuthDeg);
+          if (sep >= 5) return null;
+          const mx = azToX(highlightPoint.azimuthDeg);
+          const bx = azToX(b.azimuthDeg);
+          if (!inView(mx) && !inView(bx)) return null;
+          const my = altToY(highlightPoint.altitudeDeg);
+          const by = altToY(b.altitudeDeg);
+          const cx = (mx + bx) / 2;
+          const cy = (my + by) / 2;
+          const rr = Math.max(Math.hypot(mx - bx, my - by) / 2 + 13, 20);
+          return (
+            <g key={`conj-${b.name}`}>
+              <circle cx={cx} cy={cy} r={rr} fill="none" stroke={riseSetColor} strokeWidth={1} strokeDasharray="3 4" opacity={0.8} />
+              <text x={cx} y={cy - rr - 5} textAnchor="middle" fontSize={9} fontWeight={600} fill={riseSetColor} fontFamily="system-ui">
+                {b.symbol} {sep.toFixed(1)}° apart
+              </text>
+            </g>
+          );
+        })}
 
         {/* Compass tape */}
         {tape.map((t) => (

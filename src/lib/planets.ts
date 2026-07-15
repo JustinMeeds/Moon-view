@@ -24,6 +24,97 @@ export const PLANET_META: Record<PlanetName, { symbol: string; color: string }> 
 
 const PLANETS: PlanetName[] = ["Venus", "Mars", "Jupiter", "Saturn", "Mercury"];
 
+/** Hex colors for SVG rendering (PLANET_META has Tailwind classes for text UI) */
+export const BODY_HEX: Record<PlanetName | "Sun", string> = {
+  Mercury: "#fdba74",
+  Venus:   "#fef9c3",
+  Mars:    "#f87171",
+  Jupiter: "#fcd34d",
+  Saturn:  "#facc15",
+  Sun:     "#fde047",
+};
+
+export interface SkyBody {
+  name: PlanetName | "Sun";
+  symbol: string;
+  colorHex: string;
+  azimuthDeg: number;
+  altitudeDeg: number;
+  cardinal: string;
+  /** Apparent visual magnitude — lower is brighter (Venus ≈ −4, Saturn ≈ +1) */
+  magnitude: number;
+  isUp: boolean;
+}
+
+function bodyAltAz(body: Astronomy.Body, date: Date, obs: Astronomy.Observer) {
+  const eq = Astronomy.Equator(body, date, obs, true, true);
+  return Astronomy.Horizon(date, obs, eq.ra, eq.dec);
+}
+
+/** Topocentric positions of the five naked-eye planets + Sun at an instant */
+export function getSkyBodies(date: Date, loc: Location): SkyBody[] {
+  const obs = new Astronomy.Observer(loc.lat, loc.lng, 0);
+  const bodies: SkyBody[] = [];
+
+  const push = (name: PlanetName | "Sun", body: Astronomy.Body) => {
+    try {
+      const hor = bodyAltAz(body, date, obs);
+      let magnitude = -26.7; // Sun
+      if (name !== "Sun") {
+        magnitude = Astronomy.Illumination(body, date).mag;
+      }
+      bodies.push({
+        name,
+        symbol: name === "Sun" ? "☉" : PLANET_META[name].symbol,
+        colorHex: BODY_HEX[name],
+        azimuthDeg: hor.azimuth,
+        altitudeDeg: hor.altitude,
+        cardinal: azimuthToCardinal(hor.azimuth),
+        magnitude,
+        isUp: hor.altitude > 0,
+      });
+    } catch {
+      // skip body on ephemeris failure
+    }
+  };
+
+  push("Sun", Astronomy.Body.Sun);
+  for (const p of PLANETS) push(p, p as Astronomy.Body);
+  return bodies;
+}
+
+/**
+ * Best moment to actually see a conjunction near its minimum-separation
+ * instant: moon up while the sky is at least twilight-dark, scanning ±12 h
+ * in 30-min steps. Crescent-moon conjunctions often exist ONLY in twilight
+ * (a young moon sets with the sun), so darkness is scored, not required.
+ * Falls back to the instant itself when the pair is never up in a dark sky.
+ */
+export function bestViewingMoment(around: Date, loc: Location): Date {
+  const obs = new Astronomy.Observer(loc.lat, loc.lng, 0);
+  const STEP_MS = 15 * 60_000;
+  const STEPS = 48; // ±12 h
+
+  const scan = (minMoonAlt: number, maxSunAlt: number): Date | null => {
+    let best: { time: Date; score: number } | null = null;
+    for (let i = -STEPS; i <= STEPS; i++) {
+      const t = new Date(around.getTime() + i * STEP_MS);
+      const moon = bodyAltAz(Astronomy.Body.Moon, t, obs);
+      if (moon.altitude <= minMoonAlt) continue;
+      const sun = bodyAltAz(Astronomy.Body.Sun, t, obs);
+      if (sun.altitude >= maxSunAlt) continue;
+      const darkness = Math.min(-sun.altitude, 18);
+      const score = moon.altitude + darkness - Math.abs(i) * 0.05;
+      if (!best || score > best.score) best = { time: t, score };
+    }
+    return best?.time ?? null;
+  };
+
+  // Properly dark sky first; young-crescent conjunctions may only exist in
+  // twilight, so fall back to a relaxed pass before giving up
+  return scan(3, -6) ?? scan(0.5, -1) ?? around;
+}
+
 export function getUpcomingConjunctions(
   from: Date,
   days: number,

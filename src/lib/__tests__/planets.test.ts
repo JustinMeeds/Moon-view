@@ -1,7 +1,35 @@
 import { describe, it, expect } from "vitest";
-import { getUpcomingConjunctions, PlanetName } from "../planets";
-import { NYC } from "./fixtures";
+import { getUpcomingConjunctions, getSkyBodies, PlanetName } from "../planets";
+import { NYC, TOL } from "./fixtures";
 import { azimuthToCardinal } from "../utils";
+
+describe("getSkyBodies", () => {
+  // USNO celnav reference: Saturn at NYC 2026-07-14T06:00Z
+  // hc 20.133202 − pa 0.000247 = topocentric alt 20.133; zn 103.269534
+  it("should match USNO Saturn position at NYC 2026-07-14T06:00Z", () => {
+    const bodies = getSkyBodies(new Date("2026-07-14T06:00:00Z"), NYC);
+    const saturn = bodies.find((b) => b.name === "Saturn");
+    expect(saturn).toBeDefined();
+    expect(Math.abs(saturn!.altitudeDeg - 20.133)).toBeLessThanOrEqual(TOL.altitudeDeg);
+    expect(Math.abs(saturn!.azimuthDeg - 103.270)).toBeLessThanOrEqual(TOL.azimuthDeg);
+    expect(saturn!.isUp).toBe(true);
+  });
+
+  it("should return sun and five planets with sane fields", () => {
+    const bodies = getSkyBodies(new Date("2026-07-14T06:00:00Z"), NYC);
+    expect(bodies).toHaveLength(6);
+    const sun = bodies.find((b) => b.name === "Sun");
+    expect(sun!.magnitude).toBeLessThan(-20);
+    for (const b of bodies) {
+      expect(b.altitudeDeg).toBeGreaterThanOrEqual(-90);
+      expect(b.altitudeDeg).toBeLessThanOrEqual(90);
+      expect(b.azimuthDeg).toBeGreaterThanOrEqual(0);
+      expect(b.azimuthDeg).toBeLessThan(360);
+      expect(b.cardinal).toBe(azimuthToCardinal(b.azimuthDeg));
+      expect(b.isUp).toBe(b.altitudeDeg > 0);
+    }
+  });
+});
 
 describe("getUpcomingConjunctions", () => {
   it("should return array of conjunctions", () => {
